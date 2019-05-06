@@ -168,6 +168,7 @@ namespace Xiropht_Miner
                 float firstNumber = ClassUtility.GenerateNumberMathCalculation(minRange, maxRange, ClassMiningStats.CurrentMaxRangeJob.ToString("F0").Length);
                 float secondNumber = ClassUtility.GenerateNumberMathCalculation(minRange, maxRange, ClassMiningStats.CurrentMaxRangeJob.ToString("F0").Length);
 
+
                 if (firstNumber > 1)
                 {
                     if (firstNumber <= ClassMiningStats.CurrentMaxRangeJob)
@@ -182,7 +183,6 @@ namespace Xiropht_Miner
                                     {
                                         #region Test unreverted calculation
                                         string calculation = firstNumber + " " + ClassUtility.RandomOperatorCalculation[i] + " " + secondNumber;
-
                                         float calculationResult = ClassUtility.ComputeCalculation(firstNumber, ClassUtility.RandomOperatorCalculation[i], secondNumber);
                                         DictionaryMiningCalculationThread[idThread - 1]++;
                                         if (calculationResult >= ClassMiningStats.CurrentMinRangeJob && calculationResult <= ClassMiningStats.CurrentMaxRangeJob)
@@ -194,7 +194,6 @@ namespace Xiropht_Miner
                                                 {
                                                     // Generate SHA512 hash for block hash indication.
                                                     string hashEncryptedShare = ClassUtility.GenerateSHA512(encryptedShare);
-
                                                     if (calculationResult == ClassMiningStats.CurrentMiningJob || hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
                                                     {
                                                         try

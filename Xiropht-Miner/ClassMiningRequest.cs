@@ -40,6 +40,8 @@ namespace Xiropht_Miner
         /// Submitted data from miner according to login type.
         /// </summary>
         public const string TypeLogin = "login";
+        public const string TypeLoginOk = "login-ok";
+        public const string TypeLoginWrong = "wrong";
         public const string SubmitWalletAddress = "walletaddress";
         public const string SubmitVersion = "version";
 

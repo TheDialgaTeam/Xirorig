@@ -87,7 +87,7 @@ namespace Xiropht_Miner
                     ShowCommandLineHelp();
                     break;
                 case ClassCommandLine.CommandLineJob:
-                    ClassConsole.ConsoleWriteLine("Current Mining Difficulty: " + ClassMiningStats.CurrentMiningDifficulty + " Current Mining Job: " + ClassMiningStats.CurrentMiningJob + " | Block ID: " + ClassMiningStats.CurrentBlockId + " | Block Difficulty: " + ClassMiningStats.CurrentMaxRangeJob, ClassConsoleEnumeration.IndexPoolConsoleMagentaLog);
+                    ClassConsole.ConsoleWriteLine("Current Mining Difficulty: " + ClassMiningStats.CurrentMiningDifficulty + " | Current Mining Job: " + ClassMiningStats.CurrentMiningJob + " | Block ID: " + ClassMiningStats.CurrentBlockId + " | Block Difficulty: " + ClassMiningStats.CurrentMaxRangeJob, ClassConsoleEnumeration.IndexPoolConsoleMagentaLog);
                     break;
                 case ClassCommandLine.CommandLineStats:
                     try

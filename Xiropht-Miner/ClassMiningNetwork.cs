@@ -259,6 +259,20 @@ namespace Xiropht_Miner
 
                 switch (jsonPacket["type"].ToString().ToLower())
                 {
+                    case ClassMiningRequest.TypeLogin:
+                        if (jsonPacket.ContainsKey(ClassMiningRequest.TypeLoginWrong))
+                        {
+                            ClassConsole.ConsoleWriteLine("Wrong login/wallet address, please check your setting. Disconnect now.", ClassConsoleEnumeration.IndexPoolConsoleRedLog);
+                            DisconnectMiner();
+                        }
+                        else
+                        {
+                            if (jsonPacket.ContainsKey(ClassMiningRequest.TypeLoginOk))
+                            {
+                                ClassConsole.ConsoleWriteLine("Login/Wallet Address accepted by the pool. Waiting job.", ClassConsoleEnumeration.IndexPoolConsoleGreenLog);
+                            }
+                        }
+                        break;
                     case ClassMiningRequest.TypeKeepAlive:
                         LastPacketReceived = DateTimeOffset.Now.ToUnixTimeSeconds();
                         break;
