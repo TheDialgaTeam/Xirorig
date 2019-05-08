@@ -10,3 +10,7 @@ Xiropht Miner compatible with Xiropht Pool Tool only.
 -> Ryzen 7 2700x 8 Threads + Thread Affinity + Task Priority [AMD64] | 5000H/s | Windows 10 64bit.
 
 **Newtonsoft.Json library is used since version 0.0.0.1R for generated json syntax on mining packets: https://github.com/JamesNK/Newtonsoft.Json**
+
+**Developers:**
+
+- Xiropht (Sam Segura)
