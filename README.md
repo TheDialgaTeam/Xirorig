@@ -1,5 +1,5 @@
 # Xiropht-Miner
-Xiropht Miner compatible with Xiropht Pool Tool only.
+**Xiropht Miner compatible with Xiropht Pool example tool: https://github.com/XIROPHT/Xiropht-Mining-Pool**
 
 <h2>Hashrate Test Result</h2>
 
