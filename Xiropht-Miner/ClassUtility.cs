@@ -70,11 +70,11 @@ namespace Xiropht_Miner
         /// Return a number for complete a math calculation text.
         /// </summary>
         /// <returns></returns>
-        public static string GenerateNumberMathCalculation(decimal minRange, decimal maxRange, int currentBlockDifficultyLength)
+        public static string GenerateNumberMathCalculation(decimal minRange, decimal maxRange)
         {
             string number = "0";
             StringBuilder numberBuilder = new StringBuilder();
-            while (decimal.Parse(number) > maxRange || decimal.Parse(number) <= 1 || number.Length > currentBlockDifficultyLength)
+            while (decimal.Parse(number) > maxRange || decimal.Parse(number) < minRange)
             {
                 var randomJobSize = GetRandomBetweenJob(minRange, maxRange).ToString("F0").Length;
 
