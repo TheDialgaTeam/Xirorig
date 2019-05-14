@@ -299,6 +299,8 @@ namespace Xiropht_Miner
                         ClassMining.ProceedMining();
 
                         ClassConsole.ConsoleWriteLine("New Mining Job: " + ClassMiningStats.CurrentJobIndication + " | Job Difficulty: " + ClassMiningStats.CurrentMiningDifficulty + " | Block ID: " + ClassMiningStats.CurrentBlockId + " | Block Difficulty: " + ClassMiningStats.CurrentBlockDifficulty + " | Block Hash Indication: " + ClassMiningStats.CurrentBlockIndication, ClassConsoleEnumeration.IndexPoolConsoleMagentaLog);
+                        ClassConsole.ConsoleWriteLine("Mining Job range received: " + ClassMiningStats.CurrentMinRangeJob+"|"+ClassMiningStats.CurrentMaxRangeJob, ClassConsoleEnumeration.IndexPoolConsoleMagentaLog);
+
                         break;
                     case ClassMiningRequest.TypeShare:
                         LastPacketReceived = DateTimeOffset.Now.ToUnixTimeSeconds();

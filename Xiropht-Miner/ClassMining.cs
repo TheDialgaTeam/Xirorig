@@ -137,7 +137,7 @@ namespace Xiropht_Miner
                 minRange = 2;
             }
             decimal maxRange = Math.Round(((ClassMiningStats.CurrentMaxRangeJob / ClassMiningConfig.MiningConfigThread) * idThread), 0);
-            ClassConsole.ConsoleWriteLine("Start mining thread id: " + idThread + " on mining job: "+ClassMiningStats.CurrentMiningDifficulty+" with range: "+minRange+"|"+maxRange, ClassConsoleEnumeration.IndexPoolConsoleBlueLog);
+            ClassConsole.ConsoleWriteLine("Start mining thread id: " + idThread + " on mining job: " + ClassMiningStats.CurrentMiningDifficulty + " with range: " + minRange + "|" + maxRange, ClassConsoleEnumeration.IndexPoolConsoleBlueLog);
             var currentMiningJobIndication = ClassMiningStats.CurrentJobIndication;
 
             while (ClassMiningNetwork.IsLogged && ThreadMiningRunning)
@@ -150,35 +150,38 @@ namespace Xiropht_Miner
                         minRange = 2;
                     }
                     maxRange = (Math.Round(((ClassMiningStats.CurrentMaxRangeJob / ClassMiningConfig.MiningConfigThread) * idThread), 0));
+                    maxRange = Math.Round(maxRange, 0);
                     currentMiningJobIndication = ClassMiningStats.CurrentJobIndication;
-                    ClassConsole.ConsoleWriteLine("Start mining thread id: " + idThread + " on mining job difficulty: " + ClassMiningStats.CurrentMiningDifficulty  + " with range: " + minRange + "|" + maxRange, ClassConsoleEnumeration.IndexPoolConsoleBlueLog);
+                    ClassConsole.ConsoleWriteLine("Start mining thread id: " + idThread + " on mining job difficulty: " + ClassMiningStats.CurrentMiningDifficulty + " with range: " + minRange + "|" + maxRange, ClassConsoleEnumeration.IndexPoolConsoleBlueLog);
                 }
-                string firstNumber = ClassUtility.GenerateNumberMathCalculation(minRange, maxRange, ClassMiningStats.CurrentMaxRangeJob.ToString("F0").Length);
-                string secondNumber = ClassUtility.GenerateNumberMathCalculation(minRange, maxRange, ClassMiningStats.CurrentMaxRangeJob.ToString("F0").Length);
+                decimal firstNumber = ClassUtility.GetRandomBetweenJob(minRange, maxRange);
+                decimal secondNumber = ClassUtility.GetRandomBetweenJob(minRange, maxRange);
 
-
-
-                for (int i = 0; i < ClassUtility.RandomOperatorCalculation.Length; i++)
+                if (firstNumber >= ClassMiningStats.CurrentMinRangeJob && firstNumber <= ClassMiningStats.CurrentMaxRangeJob)
                 {
-                    if (i < ClassUtility.RandomOperatorCalculation.Length)
+                    if (secondNumber >= ClassMiningStats.CurrentMinRangeJob && secondNumber <= ClassMiningStats.CurrentMaxRangeJob)
                     {
-                        #region Test unreverted calculation
-                        string calculation = firstNumber + " " + ClassUtility.RandomOperatorCalculation[i] + " " + secondNumber;
-                        decimal calculationResult = ClassUtility.ComputeCalculation(firstNumber, ClassUtility.RandomOperatorCalculation[i], secondNumber);
-
-                        if (calculationResult >= ClassMiningStats.CurrentMinRangeJob && calculationResult <= ClassMiningStats.CurrentMaxRangeJob)
+                        for (int i = 0; i < ClassUtility.RandomOperatorCalculation.Length; i++)
                         {
-                            if (calculationResult - Math.Round(calculationResult, 0) == 0) // Check if the result contain decimal places, if yes ignore it. 
+                            if (i < ClassUtility.RandomOperatorCalculation.Length)
                             {
+                                #region Test unreverted calculation
+                                string calculation = firstNumber + " " + ClassUtility.RandomOperatorCalculation[i] + " " + secondNumber;
+                                decimal calculationResult = ClassUtility.ComputeCalculation(firstNumber.ToString("F0"), ClassUtility.RandomOperatorCalculation[i], secondNumber.ToString("F0"));
 
-                                string encryptedShare = MakeEncryptedShare(calculation, (idThread - 1));
-                                if (encryptedShare != ClassAlgoErrorEnumeration.AlgoError)
+
+                                if (calculationResult - Math.Round(calculationResult, 0) == 0) // Check if the result contain decimal places, if yes ignore it. 
                                 {
-                                    // Generate SHA512 hash for block hash indication.
-                                    string hashEncryptedShare = ClassUtility.GenerateSHA512(encryptedShare);
-                                    if (hashEncryptedShare == ClassMiningStats.CurrentJobIndication || hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
+                                    if (calculationResult >= ClassMiningStats.CurrentMinRangeJob && calculationResult <= ClassMiningStats.CurrentMaxRangeJob)
                                     {
-                                        JObject share = new JObject
+                                        string encryptedShare = MakeEncryptedShare(calculation, (idThread - 1));
+                                        if (encryptedShare != ClassAlgoErrorEnumeration.AlgoError)
+                                        {
+                                            // Generate SHA512 hash for block hash indication.
+                                            string hashEncryptedShare = ClassUtility.GenerateSHA512(encryptedShare);
+                                            if (hashEncryptedShare == ClassMiningStats.CurrentJobIndication || hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
+                                            {
+                                                JObject share = new JObject
                                                     {
                                                         { "type", ClassMiningRequest.TypeSubmit },
                                                         { ClassMiningRequest.SubmitResult, calculationResult },
@@ -188,74 +191,33 @@ namespace Xiropht_Miner
                                                         { ClassMiningRequest.SubmitShare, encryptedShare },
                                                         { ClassMiningRequest.SubmitHash, hashEncryptedShare }
                                                     };
-                                        await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
-
-                                    }
-                                }
-                            }
-                            else // Test reverted
-                            {
-
-                                #region Test reverted calculation
-                                calculation = secondNumber + " " + ClassUtility.RandomOperatorCalculation[i] + " " + firstNumber;
-                                calculationResult = ClassUtility.ComputeCalculation(secondNumber, ClassUtility.RandomOperatorCalculation[i], firstNumber);
-                                if (calculationResult - Math.Round(calculationResult, 0) == 0) // Check if the result contain decimal places, if yes ignore it. 
-                                {
-                                    if (calculationResult >= ClassMiningStats.CurrentMinRangeJob && calculationResult <= ClassMiningStats.CurrentMaxRangeJob)
-                                    {
-
-                                        string encryptedShare = MakeEncryptedShare(calculation, (idThread - 1));
-                                        if (encryptedShare != ClassAlgoErrorEnumeration.AlgoError)
-                                        {
-                                            // Generate SHA512 hash for block hash indication.
-                                            string hashEncryptedShare = ClassUtility.GenerateSHA512(encryptedShare);
-
-                                            if (hashEncryptedShare == ClassMiningStats.CurrentJobIndication || hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
-                                            {
-
-                                                JObject share = new JObject
-                                                        {
-                                                                { "type", ClassMiningRequest.TypeSubmit },
-                                                                { ClassMiningRequest.SubmitResult, calculationResult },
-                                                                { ClassMiningRequest.SubmitFirstNumber, secondNumber },
-                                                                { ClassMiningRequest.SubmitSecondNumber, firstNumber },
-                                                                { ClassMiningRequest.SubmitOperator, ClassUtility.RandomOperatorCalculation[i] },
-                                                                { ClassMiningRequest.SubmitShare, encryptedShare },
-                                                                { ClassMiningRequest.SubmitHash, hashEncryptedShare }
-                                                        };
                                                 await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
 
                                             }
                                         }
                                     }
-
-                                }
-                                #endregion
-
-                            }
-
-                        }
-                        else // Test reverted
-                        {
-
-                            #region Test reverted calculation
-                            calculation = secondNumber + " " + ClassUtility.RandomOperatorCalculation[i] + " " + firstNumber;
-                            calculationResult = ClassUtility.ComputeCalculation(secondNumber, ClassUtility.RandomOperatorCalculation[i], firstNumber);
-                            if (calculationResult - Math.Round(calculationResult, 0) == 0) // Check if the result contain decimal places, if yes ignore it. 
-                            {
-                                if (calculationResult >= ClassMiningStats.CurrentMinRangeJob && calculationResult <= ClassMiningStats.CurrentMaxRangeJob)
-                                {
-
-                                    string encryptedShare = MakeEncryptedShare(calculation, (idThread - 1));
-                                    if (encryptedShare != ClassAlgoErrorEnumeration.AlgoError)
+                                    else // Test reverted
                                     {
-                                        // Generate SHA512 hash for block hash indication.
-                                        string hashEncryptedShare = ClassUtility.GenerateSHA512(encryptedShare);
 
-                                        if (hashEncryptedShare == ClassMiningStats.CurrentJobIndication || hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
+                                        #region Test reverted calculation
+                                        calculation = secondNumber + " " + ClassUtility.RandomOperatorCalculation[i] + " " + firstNumber;
+                                        calculationResult = ClassUtility.ComputeCalculation(secondNumber.ToString("F0"), ClassUtility.RandomOperatorCalculation[i], firstNumber.ToString("F0"));
+
+                                        if (calculationResult - Math.Round(calculationResult, 0) == 0) // Check if the result contain decimal places, if yes ignore it. 
                                         {
+                                            if (calculationResult >= ClassMiningStats.CurrentMinRangeJob && calculationResult <= ClassMiningStats.CurrentMaxRangeJob)
+                                            {
 
-                                            JObject share = new JObject
+                                                string encryptedShare = MakeEncryptedShare(calculation, (idThread - 1));
+                                                if (encryptedShare != ClassAlgoErrorEnumeration.AlgoError)
+                                                {
+                                                    // Generate SHA512 hash for block hash indication.
+                                                    string hashEncryptedShare = ClassUtility.GenerateSHA512(encryptedShare);
+
+                                                    if (hashEncryptedShare == ClassMiningStats.CurrentJobIndication || hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
+                                                    {
+
+                                                        JObject share = new JObject
                                                         {
                                                                 { "type", ClassMiningRequest.TypeSubmit },
                                                                 { ClassMiningRequest.SubmitResult, calculationResult },
@@ -265,22 +227,65 @@ namespace Xiropht_Miner
                                                                 { ClassMiningRequest.SubmitShare, encryptedShare },
                                                                 { ClassMiningRequest.SubmitHash, hashEncryptedShare }
                                                         };
-                                            await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
+                                                        await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
+
+                                                    }
+                                                }
+                                            }
 
                                         }
+                                        #endregion
+
                                     }
+
+                                }
+                                else // Test reverted
+                                {
+
+                                    #region Test reverted calculation
+                                    calculation = secondNumber + " " + ClassUtility.RandomOperatorCalculation[i] + " " + firstNumber;
+                                    calculationResult = ClassUtility.ComputeCalculation(secondNumber.ToString("F0"), ClassUtility.RandomOperatorCalculation[i], firstNumber.ToString("F0"));
+                                    if (calculationResult - Math.Round(calculationResult, 0) == 0) // Check if the result contain decimal places, if yes ignore it. 
+                                    {
+                                        if (calculationResult >= ClassMiningStats.CurrentMinRangeJob && calculationResult <= ClassMiningStats.CurrentMaxRangeJob)
+                                        {
+
+                                            string encryptedShare = MakeEncryptedShare(calculation, (idThread - 1));
+                                            if (encryptedShare != ClassAlgoErrorEnumeration.AlgoError)
+                                            {
+                                                // Generate SHA512 hash for block hash indication.
+                                                string hashEncryptedShare = ClassUtility.GenerateSHA512(encryptedShare);
+
+                                                if (hashEncryptedShare == ClassMiningStats.CurrentJobIndication || hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
+                                                {
+
+                                                    JObject share = new JObject
+                                                        {
+                                                                { "type", ClassMiningRequest.TypeSubmit },
+                                                                { ClassMiningRequest.SubmitResult, calculationResult },
+                                                                { ClassMiningRequest.SubmitFirstNumber, secondNumber },
+                                                                { ClassMiningRequest.SubmitSecondNumber, firstNumber },
+                                                                { ClassMiningRequest.SubmitOperator, ClassUtility.RandomOperatorCalculation[i] },
+                                                                { ClassMiningRequest.SubmitShare, encryptedShare },
+                                                                { ClassMiningRequest.SubmitHash, hashEncryptedShare }
+                                                        };
+                                                    await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
+
+                                                }
+                                            }
+                                        }
+
+                                    }
+                                    #endregion
+
                                 }
 
+
+                                #endregion
                             }
-                            #endregion
-
                         }
-
-
-                        #endregion
                     }
                 }
-
             }
 
             ThreadMiningRunning = false;
