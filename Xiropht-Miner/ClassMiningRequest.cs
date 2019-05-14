@@ -13,6 +13,7 @@ namespace Xiropht_Miner
         public const string TypeBlockTimestampCreate = "block_timestamp_create";
         public const string TypeBlockKey = "block_key";
         public const string TypeBlockIndication = "block_indication";
+        public const string TypeBlockDifficulty = "block_difficulty";
         public const string TypeJobMiningMethodName = "method_name";
         public const string TypeJobMiningMethodAesRound = "aes_round";
         public const string TypeJobMiningMethodAesSize = "aes_size";
@@ -26,6 +27,7 @@ namespace Xiropht_Miner
         /// Types of result provided by the pool.
         /// </summary>
         public const string TypeResult = "result";
+        public const string TypeJobIndication = "job_indication";
         public const string TypeMinRange = "min_range";
         public const string TypeMaxRange = "max_range";
         public const string TypeShare = "share";

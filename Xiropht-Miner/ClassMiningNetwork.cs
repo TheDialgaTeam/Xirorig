@@ -279,21 +279,14 @@ namespace Xiropht_Miner
                     case ClassMiningRequest.TypeJob:
                         LastPacketReceived = DateTimeOffset.Now.ToUnixTimeSeconds();
                         IsLogged = true;
-                        try
-                        {
-                            ClassMining.ListOfCalculation.Clear();
-                        }
-                        catch
-                        {
-
-                        }
                         ClassMiningStats.CurrentBlockId = int.Parse(jsonPacket[ClassMiningRequest.TypeBlock].ToString());
                         ClassMiningStats.CurrentBlockTimestampCreate = jsonPacket[ClassMiningRequest.TypeBlockTimestampCreate].ToString();
                         ClassMiningStats.CurrentBlockKey = jsonPacket[ClassMiningRequest.TypeBlockKey].ToString();
                         ClassMiningStats.CurrentBlockIndication = jsonPacket[ClassMiningRequest.TypeBlockIndication].ToString();
-                        ClassMiningStats.CurrentMiningJob = float.Parse(jsonPacket[ClassMiningRequest.TypeResult].ToString());
-                        ClassMiningStats.CurrentMinRangeJob = float.Parse(jsonPacket[ClassMiningRequest.TypeMinRange].ToString());
-                        ClassMiningStats.CurrentMaxRangeJob = float.Parse(jsonPacket[ClassMiningRequest.TypeMaxRange].ToString());
+                        ClassMiningStats.CurrentBlockDifficulty = decimal.Parse(jsonPacket[ClassMiningRequest.TypeBlockDifficulty].ToString());
+                        ClassMiningStats.CurrentJobIndication = jsonPacket[ClassMiningRequest.TypeJobIndication].ToString();
+                        ClassMiningStats.CurrentMinRangeJob = decimal.Parse(jsonPacket[ClassMiningRequest.TypeMinRange].ToString());
+                        ClassMiningStats.CurrentMaxRangeJob = decimal.Parse(jsonPacket[ClassMiningRequest.TypeMaxRange].ToString());
                         ClassMiningStats.CurrentMethodName = jsonPacket[ClassMiningRequest.TypeJobMiningMethodName].ToString();
                         ClassMiningStats.CurrentRoundAesRound = int.Parse(jsonPacket[ClassMiningRequest.TypeJobMiningMethodAesRound].ToString());
                         ClassMiningStats.CurrentRoundAesSize = int.Parse(jsonPacket[ClassMiningRequest.TypeJobMiningMethodAesSize].ToString());
@@ -301,11 +294,11 @@ namespace Xiropht_Miner
                         ClassMiningStats.CurrentRoundXorKey = int.Parse(jsonPacket[ClassMiningRequest.TypeJobMiningMethodXorKey].ToString());
                         if (jsonPacket.ContainsKey(ClassMiningRequest.TypeJobDifficulty))
                         {
-                            ClassMiningStats.CurrentMiningDifficulty = float.Parse(jsonPacket[ClassMiningRequest.TypeJobDifficulty].ToString());
+                            ClassMiningStats.CurrentMiningDifficulty = decimal.Parse(jsonPacket[ClassMiningRequest.TypeJobDifficulty].ToString());
                         }
                         ClassMining.ProceedMining();
 
-                        ClassConsole.ConsoleWriteLine("New Mining Job: " + ClassMiningStats.CurrentMiningJob + " | Job Difficulty: " + ClassMiningStats.CurrentMiningDifficulty + " | Block ID: " + ClassMiningStats.CurrentBlockId + " | Block Difficulty: " + ClassMiningStats.CurrentMaxRangeJob + " | Block Hash Indication: " + ClassMiningStats.CurrentBlockIndication, ClassConsoleEnumeration.IndexPoolConsoleMagentaLog);
+                        ClassConsole.ConsoleWriteLine("New Mining Job: " + ClassMiningStats.CurrentJobIndication + " | Job Difficulty: " + ClassMiningStats.CurrentMiningDifficulty + " | Block ID: " + ClassMiningStats.CurrentBlockId + " | Block Difficulty: " + ClassMiningStats.CurrentBlockDifficulty + " | Block Hash Indication: " + ClassMiningStats.CurrentBlockIndication, ClassConsoleEnumeration.IndexPoolConsoleMagentaLog);
                         break;
                     case ClassMiningRequest.TypeShare:
                         LastPacketReceived = DateTimeOffset.Now.ToUnixTimeSeconds();

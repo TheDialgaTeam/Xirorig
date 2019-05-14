@@ -13,10 +13,11 @@
         public static string CurrentBlockTimestampCreate;
         public static string CurrentBlockKey;
         public static string CurrentBlockIndication;
-        public static float CurrentMiningJob;
-        public static float CurrentMiningDifficulty;
-        public static float CurrentMinRangeJob;
-        public static float CurrentMaxRangeJob;
+        public static decimal CurrentBlockDifficulty;
+        public static string CurrentJobIndication;
+        public static decimal CurrentMiningDifficulty;
+        public static decimal CurrentMinRangeJob;
+        public static decimal CurrentMaxRangeJob;
 
         /// <summary>
         /// Mining method informations.
