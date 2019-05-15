@@ -1,7 +1,7 @@
 # Xirorig
 **Xiropht Miner compatible with Xiropht Pool: https://github.com/XIROPHT/Xiropht-Mining-Pool**
 
-Xirorig is a high performance Xiropht (XIRO) CPU miner, with official support for Windows. This is based on Xiropht-Miner officialt tools with modifications.
+Xirorig is a high performance Xiropht (XIRO) CPU miner, with official support for Windows. This is based on Xiropht-Miner official tools with modifications.
 
 - This is the **CPU-mining** pool version. There is no solo or GPU miners at the moment.
 
