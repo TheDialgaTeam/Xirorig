@@ -1,5 +1,4 @@
-﻿
-namespace Xiropht_Miner
+﻿namespace Xiropht_Miner
 {
     public class ClassMiningRequest
     {
@@ -7,6 +6,7 @@ namespace Xiropht_Miner
         /// Types of request provided by the pool.
         /// </summary>
         public const string TypeSubmit = "submit";
+
         public const string TypeJob = "job";
         public const string TypeJobDifficulty = "difficulty";
         public const string TypeBlock = "block";
@@ -20,13 +20,13 @@ namespace Xiropht_Miner
         public const string TypeJobMiningMethodAesKey = "aes_key";
         public const string TypeJobMiningMethodXorKey = "xor_key";
 
-
         public const string TypeKeepAlive = "keep-alive";
 
         /// <summary>
         /// Types of result provided by the pool.
         /// </summary>
         public const string TypeResult = "result";
+
         public const string TypeJobIndication = "job_indication";
         public const string TypeMinRange = "min_range";
         public const string TypeMaxRange = "max_range";
@@ -36,12 +36,11 @@ namespace Xiropht_Miner
         public const string TypeResultShareDuplicate = "duplicate share";
         public const string TypeResultShareLowDifficulty = "low difficulty share";
 
-
-
         /// <summary>
         /// Submitted data from miner according to login type.
         /// </summary>
         public const string TypeLogin = "login";
+
         public const string TypeLoginOk = "login-ok";
         public const string TypeLoginWrong = "wrong";
         public const string SubmitWalletAddress = "walletaddress";
@@ -51,6 +50,7 @@ namespace Xiropht_Miner
         /// Submitted data from miner according to submit share.
         /// </summary>
         public const string SubmitResult = "result";
+
         public const string SubmitFirstNumber = "firstNumber";
         public const string SubmitSecondNumber = "secondNumber";
         public const string SubmitOperator = "operator";

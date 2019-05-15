@@ -106,9 +106,7 @@ namespace Xiropht_Miner
         public static IEnumerable<(decimal first, decimal second)> SubtractOf(decimal result)
         {
             for (var i = ClassMiningStats.CurrentMaxRangeJob; i > result + 1; i--)
-            {
                 yield return (i, i - result);
-            }
         }
     }
 }

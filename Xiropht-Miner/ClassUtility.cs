@@ -7,18 +7,14 @@ namespace Xiropht_Miner
 {
     public class ClassUtility
     {
-        public static string[] RandomOperatorCalculation = new[] { "+", "*", "%", "-", "/" };
+        public static string[] RandomOperatorCalculation = { "+", "*", "%", "-", "/" };
 
-        public static string[] RandomNumberCalculation = new[] { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
-
-
+        public static string[] RandomNumberCalculation = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
         public static string ConvertPath(string path)
         {
             if (Environment.OSVersion.Platform == PlatformID.Unix || Environment.OSVersion.Platform == PlatformID.MacOSX)
-            {
                 path = path.Replace("\\", "/");
-            }
             return path;
         }
 
@@ -29,7 +25,7 @@ namespace Xiropht_Miner
         /// <returns></returns>
         public static string StringToHexString(string hex)
         {
-            byte[] ba = Encoding.UTF8.GetBytes(hex);
+            var ba = Encoding.UTF8.GetBytes(hex);
 
             return BitConverter.ToString(ba).Replace("-", "");
         }
@@ -44,6 +40,7 @@ namespace Xiropht_Miner
         public static decimal ComputeCalculation(string firstNumber, string operatorCalculation, string secondNumber)
         {
             decimal calculCompute = 0;
+
             switch (operatorCalculation)
             {
                 case "+":
@@ -72,44 +69,46 @@ namespace Xiropht_Miner
         /// <returns></returns>
         public static string GenerateNumberMathCalculation(decimal minRange, decimal maxRange)
         {
-            string number = "0";
-            StringBuilder numberBuilder = new StringBuilder();
+            var number = "0";
+            var numberBuilder = new StringBuilder();
+
             while (decimal.Parse(number) > maxRange || decimal.Parse(number) < minRange)
             {
                 var randomJobSize = GetRandomBetweenJob(minRange, maxRange).ToString("F0").Length;
 
-                int randomSize = GetRandomBetween(1, randomJobSize);
-                int counter = 0;
+                var randomSize = GetRandomBetween(1, randomJobSize);
+                var counter = 0;
+
                 while (counter < randomSize)
                 {
                     if (randomSize > 1)
                     {
                         var numberRandom = RandomNumberCalculation[GetRandomBetween(0, RandomNumberCalculation.Length - 1)];
+
                         if (counter == 0)
                         {
                             while (numberRandom == "0")
-                            {
                                 numberRandom = RandomNumberCalculation[GetRandomBetween(0, RandomNumberCalculation.Length - 1)];
-                            }
                             numberBuilder.Append(numberRandom);
                         }
                         else
-                        {
                             numberBuilder.Append(numberRandom);
-                        }
                     }
                     else
                     {
                         numberBuilder.Append(
-                                       RandomNumberCalculation[
-                                           GetRandomBetween(0, RandomNumberCalculation.Length - 1)]);
+                            RandomNumberCalculation[
+                                GetRandomBetween(0, RandomNumberCalculation.Length - 1)]);
                     }
+
                     counter++;
                 }
+
                 number = numberBuilder.ToString();
                 numberBuilder.Clear();
                 return number;
             }
+
             return number;
         }
 
@@ -121,32 +120,32 @@ namespace Xiropht_Miner
         /// <returns></returns>
         public static decimal GetRandomBetweenJob(decimal minimumValue, decimal maximumValue)
         {
-            using (RNGCryptoServiceProvider Generator = new RNGCryptoServiceProvider())
+            using (var Generator = new RNGCryptoServiceProvider())
             {
                 var randomNumber = new byte[sizeof(decimal)];
 
                 Generator.GetBytes(randomNumber);
 
-                var asciiValueOfRandomCharacter = (decimal)Convert.ToDouble(randomNumber[0]);
+                var asciiValueOfRandomCharacter = (decimal) Convert.ToDouble(randomNumber[0]);
 
-                var multiplier = (decimal)Math.Max(0, asciiValueOfRandomCharacter / 255m - 0.00000000001m);
+                var multiplier = Math.Max(0, asciiValueOfRandomCharacter / 255m - 0.00000000001m);
 
                 var range = maximumValue - minimumValue + 1;
 
-                var randomValueInRange = (decimal)Math.Floor(multiplier * range);
-                return (minimumValue + randomValueInRange);
+                var randomValueInRange = Math.Floor(multiplier * range);
+                return minimumValue + randomValueInRange;
             }
         }
 
         /// <summary>
-        ///     Get a random number in integer size.
+        /// Get a random number in integer size.
         /// </summary>
         /// <param name="minimumValue"></param>
         /// <param name="maximumValue"></param>
         /// <returns></returns>
         public static int GetRandomBetween(int minimumValue, int maximumValue)
         {
-            using (RNGCryptoServiceProvider Generator = new RNGCryptoServiceProvider())
+            using (var Generator = new RNGCryptoServiceProvider())
             {
                 var randomNumber = new byte[sizeof(int)];
 
@@ -160,7 +159,7 @@ namespace Xiropht_Miner
 
                 var randomValueInRange = Math.Floor(multiplier * range);
 
-                return (int)(minimumValue + randomValueInRange);
+                return (int) (minimumValue + randomValueInRange);
             }
         }
 
@@ -174,8 +173,8 @@ namespace Xiropht_Miner
         {
             var result = new StringBuilder();
 
-            for (int c = 0; c < text.Length; c++)
-                result.Append((char)((uint)text[c] ^ (uint)key[c % key.Length]));
+            for (var c = 0; c < text.Length; c++)
+                result.Append((char) (text[c] ^ (uint) key[c % key.Length]));
             return result.ToString();
         }
 
@@ -190,27 +189,27 @@ namespace Xiropht_Miner
         {
             using (var pdb = new PasswordDeriveBytes(keyCrypt, keyByte))
             {
-                using (MemoryStream ms = new MemoryStream())
+                using (var ms = new MemoryStream())
                 {
-                    using (AesCryptoServiceProvider aes = new AesCryptoServiceProvider())
+                    using (var aes = new AesCryptoServiceProvider())
                     {
                         aes.BlockSize = size;
                         aes.KeySize = size;
                         aes.Key = pdb.GetBytes(aes.KeySize / 8);
                         aes.IV = pdb.GetBytes(aes.BlockSize / 8);
-                        using (CryptoStream cs = new CryptoStream(ms,
-                          aes.CreateEncryptor(), CryptoStreamMode.Write))
+
+                        using (var cs = new CryptoStream(ms,
+                            aes.CreateEncryptor(), CryptoStreamMode.Write))
                         {
                             var textByte = Encoding.UTF8.GetBytes(text);
                             cs.Write(textByte, 0, textByte.Length);
                         }
+
                         return BitConverter.ToString(ms.ToArray());
                     }
                 }
             }
         }
-
- 
 
         /// <summary>
         /// Generate a sha512 hash
@@ -220,6 +219,7 @@ namespace Xiropht_Miner
         public static string GenerateSHA512(string input)
         {
             var bytes = Encoding.UTF8.GetBytes(input);
+
             using (var hash = SHA512.Create())
             {
                 var hashedInputBytes = hash.ComputeHash(bytes);

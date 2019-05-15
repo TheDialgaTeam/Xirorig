@@ -6,6 +6,7 @@
         /// Miner stats.
         /// </summary>
         public static int TotalGoodShare;
+
         public static int TotalInvalidShare;
         public static int TotalDuplicateShare;
         public static int TotalLowDifficultyShare;
@@ -23,10 +24,10 @@
         /// Mining method informations.
         /// </summary>
         public static string CurrentMethodName;
+
         public static int CurrentRoundAesRound;
         public static int CurrentRoundAesSize;
         public static string CurrentRoundAesKey;
         public static int CurrentRoundXorKey;
-
     }
 }

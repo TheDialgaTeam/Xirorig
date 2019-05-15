@@ -1,27 +1,30 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Xiropht_Connector_All.Utils;
 
 namespace Xiropht_Miner
 {
     public class ClassMining
     {
+        public static Dictionary<int, long> DictionaryMiningThread = new Dictionary<int, long>();
+        public static long TotalHashrate;
+
         private static Thread[] ThreadMiningArray;
         private static Thread[] ThreadMiningAdditionArray;
         private static Thread[] ThreadMiningSubtractionArray;
         private static Thread[] ThreadMiningMultiplicationArray;
         private static Thread[] ThreadMiningDivisionArray;
         private static Thread[] ThreadMiningModulusArray;
-        public static Dictionary<int, long> DictionaryMiningThread = new Dictionary<int, long>(); // Id thread, total share.
+
         private static bool ThreadMiningRunning;
         private static bool EstimatedCalculationSpeed;
-        public static float TotalHashrate;
         private static bool JobCompleted;
+
         private static int ThreadMiningAdditionIndexOffset;
         private static int ThreadMiningSubtractionIndexOffset;
         private static int ThreadMiningMultiplicationIndexOffset;
@@ -40,131 +43,121 @@ namespace Xiropht_Miner
                     case 0:
                         thread.Priority = ThreadPriority.Lowest;
                         break;
+
                     case 1:
                         thread.Priority = ThreadPriority.BelowNormal;
                         break;
+
                     case 2:
                         thread.Priority = ThreadPriority.Normal;
                         break;
+
                     case 3:
                         thread.Priority = ThreadPriority.AboveNormal;
                         break;
+
                     case 4:
                         thread.Priority = ThreadPriority.Highest;
+                        break;
+
+                    default:
+                        thread.Priority = ThreadPriority.Normal;
                         break;
                 }
             }
 
-            if (!ThreadMiningRunning)
+            if (ThreadMiningRunning)
+                return;
+
+            StopThreadMining();
+            ThreadMiningRunning = true;
+
+            for (var i = 0; i < ThreadMiningArray.Length; i++)
             {
-                StopThreadMining();
-                ThreadMiningRunning = true;
+                var i1 = i + 1;
 
-                for (int i = 0; i < ThreadMiningArray.Length; i++)
+                if (!DictionaryMiningThread.ContainsKey(i))
+                    DictionaryMiningThread.Add(i, 0);
+
+                ThreadMiningArray[i] = new Thread(async () => { await StartThreadMiningAsync(i1); });
+                AdjustThreadPriority(ThreadMiningArray[i]);
+                ThreadMiningArray[i].IsBackground = true;
+                ThreadMiningArray[i].Start();
+            }
+
+            if (ClassMiningConfig.MiningConfigUseIntelligentCalculation)
+            {
+                for (var i = 0; i < ThreadMiningAdditionArray.Length; i++)
                 {
-                    int i1 = i + 1;
-                    if (!DictionaryMiningThread.ContainsKey(i))
-                    {
-                        DictionaryMiningThread.Add(i, 0);
-                    }
-                    ThreadMiningArray[i] = new Thread(async delegate ()
-                    {
-                        await StartThreadMiningAsync(i1);
-                    });
-                    AdjustThreadPriority(ThreadMiningArray[i]);
-                    ThreadMiningArray[i].IsBackground = true;
-                    ThreadMiningArray[i].Start();
+                    var i1 = i + ThreadMiningAdditionIndexOffset + 1;
+
+                    if (!DictionaryMiningThread.ContainsKey(i + ThreadMiningAdditionIndexOffset))
+                        DictionaryMiningThread.Add(i + ThreadMiningAdditionIndexOffset, 0);
+
+                    ThreadMiningAdditionArray[i] = new Thread(async () => { await StartThreadMiningAdditionJobAsync(i1); });
+                    AdjustThreadPriority(ThreadMiningAdditionArray[i]);
+                    ThreadMiningAdditionArray[i].IsBackground = true;
+                    ThreadMiningAdditionArray[i].Start();
                 }
 
-                if (ClassMiningConfig.MiningConfigUseIntelligentCalculation)
+                for (var i = 0; i < ThreadMiningSubtractionArray.Length; i++)
                 {
-                    for (int i = 0; i < ThreadMiningAdditionArray.Length; i++)
-                    {
-                        int i1 = i + ThreadMiningAdditionIndexOffset + 1;
-                        if (!DictionaryMiningThread.ContainsKey(i + ThreadMiningAdditionIndexOffset))
-                        {
-                            DictionaryMiningThread.Add(i + ThreadMiningAdditionIndexOffset, 0);
-                        }
-                        ThreadMiningAdditionArray[i] = new Thread(async delegate ()
-                        {
-                            await StartThreadMiningAdditionJobAsync(i1);
-                        });
-                        AdjustThreadPriority(ThreadMiningAdditionArray[i]);
-                        ThreadMiningAdditionArray[i].IsBackground = true;
-                        ThreadMiningAdditionArray[i].Start();
-                    }
+                    var i1 = i + ThreadMiningSubtractionIndexOffset + 1;
 
-                    for (int i = 0; i < ThreadMiningSubtractionArray.Length; i++)
-                    {
-                        int i1 = i + ThreadMiningSubtractionIndexOffset + 1;
-                        if (!DictionaryMiningThread.ContainsKey(i + ThreadMiningSubtractionIndexOffset))
-                        {
-                            DictionaryMiningThread.Add(i + ThreadMiningSubtractionIndexOffset, 0);
-                        }
-                        ThreadMiningSubtractionArray[i] = new Thread(async delegate ()
-                        {
-                            await StartThreadMiningSubtractionJobAsync(i1);
-                        });
-                        AdjustThreadPriority(ThreadMiningSubtractionArray[i]);
-                        ThreadMiningSubtractionArray[i].IsBackground = true;
-                        ThreadMiningSubtractionArray[i].Start();
-                    }
+                    if (!DictionaryMiningThread.ContainsKey(i + ThreadMiningSubtractionIndexOffset))
+                        DictionaryMiningThread.Add(i + ThreadMiningSubtractionIndexOffset, 0);
 
-                    for (int i = 0; i < ThreadMiningMultiplicationArray.Length; i++)
-                    {
-                        int i1 = i + ThreadMiningMultiplicationIndexOffset + 1;
-                        if (!DictionaryMiningThread.ContainsKey(i + ThreadMiningMultiplicationIndexOffset))
-                        {
-                            DictionaryMiningThread.Add(i + ThreadMiningMultiplicationIndexOffset, 0);
-                        }
-                        ThreadMiningMultiplicationArray[i] = new Thread(async delegate ()
-                        {
-                            await StartThreadMiningMultiplicationJobAsync(i1);
-                        });
-                        AdjustThreadPriority(ThreadMiningMultiplicationArray[i]);
-                        ThreadMiningMultiplicationArray[i].IsBackground = true;
-                        ThreadMiningMultiplicationArray[i].Start();
-                    }
-
-                    for (int i = 0; i < ThreadMiningDivisionArray.Length; i++)
-                    {
-                        int i1 = i + ThreadMiningDivisionIndexOffset + 1;
-                        if (!DictionaryMiningThread.ContainsKey(i + ThreadMiningDivisionIndexOffset))
-                        {
-                            DictionaryMiningThread.Add(i + ThreadMiningDivisionIndexOffset, 0);
-                        }
-                        ThreadMiningDivisionArray[i] = new Thread(async delegate ()
-                        {
-                            await StartThreadMiningDivisionJobAsync(i1);
-                        });
-                        AdjustThreadPriority(ThreadMiningDivisionArray[i]);
-                        ThreadMiningDivisionArray[i].IsBackground = true;
-                        ThreadMiningDivisionArray[i].Start();
-                    }
-
-                    for (int i = 0; i < ThreadMiningModulusArray.Length; i++)
-                    {
-                        int i1 = i + ThreadMiningModulusIndexOffset + 1;
-                        if (!DictionaryMiningThread.ContainsKey(i + ThreadMiningModulusIndexOffset))
-                        {
-                            DictionaryMiningThread.Add(i + ThreadMiningModulusIndexOffset, 0);
-                        }
-                        ThreadMiningModulusArray[i] = new Thread(async delegate ()
-                        {
-                            await StartThreadMiningModulusJobAsync(i1);
-                        });
-                        AdjustThreadPriority(ThreadMiningModulusArray[i]);
-                        ThreadMiningModulusArray[i].IsBackground = true;
-                        ThreadMiningModulusArray[i].Start();
-                    }
+                    ThreadMiningSubtractionArray[i] = new Thread(async () => { await StartThreadMiningSubtractionJobAsync(i1); });
+                    AdjustThreadPriority(ThreadMiningSubtractionArray[i]);
+                    ThreadMiningSubtractionArray[i].IsBackground = true;
+                    ThreadMiningSubtractionArray[i].Start();
                 }
-                
-                if (!EstimatedCalculationSpeed)
+
+                for (var i = 0; i < ThreadMiningMultiplicationArray.Length; i++)
                 {
-                    EstimatedCalculationSpeed = true;
-                    CalculateCalculationSpeed();
+                    var i1 = i + ThreadMiningMultiplicationIndexOffset + 1;
+
+                    if (!DictionaryMiningThread.ContainsKey(i + ThreadMiningMultiplicationIndexOffset))
+                        DictionaryMiningThread.Add(i + ThreadMiningMultiplicationIndexOffset, 0);
+
+                    ThreadMiningMultiplicationArray[i] = new Thread(async () => { await StartThreadMiningMultiplicationJobAsync(i1); });
+                    AdjustThreadPriority(ThreadMiningMultiplicationArray[i]);
+                    ThreadMiningMultiplicationArray[i].IsBackground = true;
+                    ThreadMiningMultiplicationArray[i].Start();
+                }
+
+                for (var i = 0; i < ThreadMiningDivisionArray.Length; i++)
+                {
+                    var i1 = i + ThreadMiningDivisionIndexOffset + 1;
+
+                    if (!DictionaryMiningThread.ContainsKey(i + ThreadMiningDivisionIndexOffset))
+                        DictionaryMiningThread.Add(i + ThreadMiningDivisionIndexOffset, 0);
+
+                    ThreadMiningDivisionArray[i] = new Thread(async () => { await StartThreadMiningDivisionJobAsync(i1); });
+                    AdjustThreadPriority(ThreadMiningDivisionArray[i]);
+                    ThreadMiningDivisionArray[i].IsBackground = true;
+                    ThreadMiningDivisionArray[i].Start();
+                }
+
+                for (var i = 0; i < ThreadMiningModulusArray.Length; i++)
+                {
+                    var i1 = i + ThreadMiningModulusIndexOffset + 1;
+
+                    if (!DictionaryMiningThread.ContainsKey(i + ThreadMiningModulusIndexOffset))
+                        DictionaryMiningThread.Add(i + ThreadMiningModulusIndexOffset, 0);
+
+                    ThreadMiningModulusArray[i] = new Thread(async () => { await StartThreadMiningModulusJobAsync(i1); });
+                    AdjustThreadPriority(ThreadMiningModulusArray[i]);
+                    ThreadMiningModulusArray[i].IsBackground = true;
+                    ThreadMiningModulusArray[i].Start();
                 }
             }
+
+            if (EstimatedCalculationSpeed)
+                return;
+
+            EstimatedCalculationSpeed = true;
+            CalculateCalculationSpeed();
         }
 
         /// <summary>
@@ -172,26 +165,18 @@ namespace Xiropht_Miner
         /// </summary>
         private static void CalculateCalculationSpeed()
         {
-            new Thread(delegate ()
+            new Thread(() =>
             {
                 while (!Program.Exit)
                 {
-                    float totalHashrate = 0;
-                    for (int i = 0; i < DictionaryMiningThread.Count; i++)
-                    {
-                        if (i < DictionaryMiningThread.Count)
-                        {
-                            try
-                            {
-                                totalHashrate += DictionaryMiningThread[i];
-                                DictionaryMiningThread[i] = 0;
-                            }
-                            catch
-                            {
+                    var totalHashrate = 0L;
 
-                            }
-                        }
+                    for (var i = 0; i < DictionaryMiningThread.Count; i++)
+                    {
+                        totalHashrate += DictionaryMiningThread[i];
+                        DictionaryMiningThread[i] = 0;
                     }
+
                     TotalHashrate = totalHashrate;
                     Thread.Sleep(1000);
                 }
@@ -207,87 +192,87 @@ namespace Xiropht_Miner
             {
                 ThreadMiningArray = new Thread[ClassMiningConfig.MiningConfigThread];
 
-                if (ClassMiningConfig.MiningConfigUseIntelligentCalculation)
-                {
-                    ThreadMiningAdditionIndexOffset = ThreadMiningArray.Length;
-                    ThreadMiningAdditionArray = new Thread[ClassMiningConfig.MiningConfigAdditionJobThread];
+                if (!ClassMiningConfig.MiningConfigUseIntelligentCalculation)
+                    return;
 
-                    ThreadMiningSubtractionIndexOffset = ThreadMiningAdditionIndexOffset + ThreadMiningAdditionArray.Length;
-                    ThreadMiningSubtractionArray = new Thread[ClassMiningConfig.MiningConfigSubtractionJobThread];
+                ThreadMiningAdditionIndexOffset = ThreadMiningArray.Length;
+                ThreadMiningAdditionArray = new Thread[ClassMiningConfig.MiningConfigAdditionJobThread];
 
-                    ThreadMiningMultiplicationIndexOffset = ThreadMiningSubtractionIndexOffset + ThreadMiningSubtractionArray.Length;
-                    ThreadMiningMultiplicationArray = new Thread[ClassMiningConfig.MiningConfigMultiplicationJobThread];
+                ThreadMiningSubtractionIndexOffset = ThreadMiningAdditionIndexOffset + ThreadMiningAdditionArray.Length;
+                ThreadMiningSubtractionArray = new Thread[ClassMiningConfig.MiningConfigSubtractionJobThread];
 
-                    ThreadMiningDivisionIndexOffset = ThreadMiningMultiplicationIndexOffset + ThreadMiningMultiplicationArray.Length;
-                    ThreadMiningDivisionArray = new Thread[ClassMiningConfig.MiningConfigDivisionJobThread];
+                ThreadMiningMultiplicationIndexOffset = ThreadMiningSubtractionIndexOffset + ThreadMiningSubtractionArray.Length;
+                ThreadMiningMultiplicationArray = new Thread[ClassMiningConfig.MiningConfigMultiplicationJobThread];
 
-                    ThreadMiningModulusIndexOffset = ThreadMiningDivisionIndexOffset + ThreadMiningDivisionArray.Length;
-                    ThreadMiningModulusArray = new Thread[ClassMiningConfig.MiningConfigModulusJobThread];
-                }
+                ThreadMiningDivisionIndexOffset = ThreadMiningMultiplicationIndexOffset + ThreadMiningMultiplicationArray.Length;
+                ThreadMiningDivisionArray = new Thread[ClassMiningConfig.MiningConfigDivisionJobThread];
+
+                ThreadMiningModulusIndexOffset = ThreadMiningDivisionIndexOffset + ThreadMiningDivisionArray.Length;
+                ThreadMiningModulusArray = new Thread[ClassMiningConfig.MiningConfigModulusJobThread];
             }
             else
             {
-                for (int i = 0; i < ThreadMiningArray.Length; i++)
+                for (var i = 0; i < ThreadMiningArray.Length; i++)
                 {
-                    if (ThreadMiningArray[i] != null && (ThreadMiningArray[i].IsAlive || ThreadMiningArray[i] != null))
-                    {
-                        DictionaryMiningThread[i] = 0;
-                        ThreadMiningArray[i].Abort();
-                        GC.SuppressFinalize(ThreadMiningArray[i]);
-                    }
+                    if (ThreadMiningArray[i] == null || !ThreadMiningArray[i].IsAlive && ThreadMiningArray[i] == null)
+                        continue;
+
+                    DictionaryMiningThread[i] = 0;
+                    ThreadMiningArray[i].Abort();
+                    GC.SuppressFinalize(ThreadMiningArray[i]);
                 }
 
                 if (!ClassMiningConfig.MiningConfigUseIntelligentCalculation)
                     return;
 
-                for (int i = 0; i < ThreadMiningAdditionArray.Length; i++)
+                for (var i = 0; i < ThreadMiningAdditionArray.Length; i++)
                 {
-                    if (ThreadMiningAdditionArray[i] != null && (ThreadMiningAdditionArray[i].IsAlive || ThreadMiningAdditionArray[i] != null))
-                    {
-                        DictionaryMiningThread[i + ThreadMiningAdditionIndexOffset] = 0;
-                        ThreadMiningAdditionArray[i].Abort();
-                        GC.SuppressFinalize(ThreadMiningAdditionArray[i]);
-                    }
+                    if (ThreadMiningAdditionArray[i] == null || (!ThreadMiningAdditionArray[i].IsAlive && ThreadMiningAdditionArray[i] == null))
+                        continue;
+
+                    DictionaryMiningThread[i + ThreadMiningAdditionIndexOffset] = 0;
+                    ThreadMiningAdditionArray[i].Abort();
+                    GC.SuppressFinalize(ThreadMiningAdditionArray[i]);
                 }
 
-                for (int i = 0; i < ThreadMiningSubtractionArray.Length; i++)
+                for (var i = 0; i < ThreadMiningSubtractionArray.Length; i++)
                 {
-                    if (ThreadMiningSubtractionArray[i] != null && (ThreadMiningSubtractionArray[i].IsAlive || ThreadMiningSubtractionArray[i] != null))
-                    {
-                        DictionaryMiningThread[i + ThreadMiningSubtractionIndexOffset] = 0;
-                        ThreadMiningSubtractionArray[i].Abort();
-                        GC.SuppressFinalize(ThreadMiningSubtractionArray[i]);
-                    }
+                    if (ThreadMiningSubtractionArray[i] == null || (!ThreadMiningSubtractionArray[i].IsAlive && ThreadMiningSubtractionArray[i] == null))
+                        continue;
+
+                    DictionaryMiningThread[i + ThreadMiningSubtractionIndexOffset] = 0;
+                    ThreadMiningSubtractionArray[i].Abort();
+                    GC.SuppressFinalize(ThreadMiningSubtractionArray[i]);
                 }
 
-                for (int i = 0; i < ThreadMiningMultiplicationArray.Length; i++)
+                for (var i = 0; i < ThreadMiningMultiplicationArray.Length; i++)
                 {
-                    if (ThreadMiningMultiplicationArray[i] != null && (ThreadMiningMultiplicationArray[i].IsAlive || ThreadMiningMultiplicationArray[i] != null))
-                    {
-                        DictionaryMiningThread[i + ThreadMiningMultiplicationIndexOffset] = 0;
-                        ThreadMiningMultiplicationArray[i].Abort();
-                        GC.SuppressFinalize(ThreadMiningMultiplicationArray[i]);
-                    }
+                    if (ThreadMiningMultiplicationArray[i] == null || (!ThreadMiningMultiplicationArray[i].IsAlive && ThreadMiningMultiplicationArray[i] == null))
+                        continue;
+
+                    DictionaryMiningThread[i + ThreadMiningMultiplicationIndexOffset] = 0;
+                    ThreadMiningMultiplicationArray[i].Abort();
+                    GC.SuppressFinalize(ThreadMiningMultiplicationArray[i]);
                 }
 
-                for (int i = 0; i < ThreadMiningDivisionArray.Length; i++)
+                for (var i = 0; i < ThreadMiningDivisionArray.Length; i++)
                 {
-                    if (ThreadMiningDivisionArray[i] != null && (ThreadMiningDivisionArray[i].IsAlive || ThreadMiningDivisionArray[i] != null))
-                    {
-                        DictionaryMiningThread[i + ThreadMiningDivisionIndexOffset] = 0;
-                        ThreadMiningDivisionArray[i].Abort();
-                        GC.SuppressFinalize(ThreadMiningDivisionArray[i]);
-                    }
+                    if (ThreadMiningDivisionArray[i] == null || (!ThreadMiningDivisionArray[i].IsAlive && ThreadMiningDivisionArray[i] == null))
+                        continue;
+
+                    DictionaryMiningThread[i + ThreadMiningDivisionIndexOffset] = 0;
+                    ThreadMiningDivisionArray[i].Abort();
+                    GC.SuppressFinalize(ThreadMiningDivisionArray[i]);
                 }
 
-                for (int i = 0; i < ThreadMiningModulusArray.Length; i++)
+                for (var i = 0; i < ThreadMiningModulusArray.Length; i++)
                 {
-                    if (ThreadMiningModulusArray[i] != null && (ThreadMiningModulusArray[i].IsAlive || ThreadMiningModulusArray[i] != null))
-                    {
-                        DictionaryMiningThread[i + ThreadMiningModulusIndexOffset] = 0;
-                        ThreadMiningModulusArray[i].Abort();
-                        GC.SuppressFinalize(ThreadMiningModulusArray[i]);
-                    }
+                    if (ThreadMiningModulusArray[i] == null || (!ThreadMiningModulusArray[i].IsAlive && ThreadMiningModulusArray[i] == null))
+                        continue;
+
+                    DictionaryMiningThread[i + ThreadMiningModulusIndexOffset] = 0;
+                    ThreadMiningModulusArray[i].Abort();
+                    GC.SuppressFinalize(ThreadMiningModulusArray[i]);
                 }
             }
         }
@@ -360,13 +345,13 @@ namespace Xiropht_Miner
                         break;
                 }
 
-                await Task.WhenAny(Task.Run(async () =>
+                await Task.Run(async () =>
                 {
                     while (currentMiningJobIndication == ClassMiningStats.CurrentJobIndication)
                         await Task.Delay(1000).ConfigureAwait(false);
 
                     JobCompleted = false;
-                })).ConfigureAwait(false);
+                }).ConfigureAwait(false);
             }
         }
 
@@ -438,13 +423,13 @@ namespace Xiropht_Miner
                         break;
                 }
 
-                await Task.WhenAny(Task.Run(async () =>
+                await Task.Run(async () =>
                 {
                     while (currentMiningJobIndication == ClassMiningStats.CurrentJobIndication)
                         await Task.Delay(1000).ConfigureAwait(false);
 
                     JobCompleted = false;
-                })).ConfigureAwait(false);
+                }).ConfigureAwait(false);
             }
         }
 
@@ -519,13 +504,13 @@ namespace Xiropht_Miner
                         break;
                 }
 
-                await Task.WhenAny(Task.Run(async () =>
+                await Task.Run(async () =>
                 {
                     while (currentMiningJobIndication == ClassMiningStats.CurrentJobIndication)
                         await Task.Delay(1000).ConfigureAwait(false);
 
                     JobCompleted = false;
-                })).ConfigureAwait(false);
+                }).ConfigureAwait(false);
             }
         }
 
@@ -600,13 +585,13 @@ namespace Xiropht_Miner
                         break;
                 }
 
-                await Task.WhenAny(Task.Run(async () =>
+                await Task.Run(async () =>
                 {
                     while (currentMiningJobIndication == ClassMiningStats.CurrentJobIndication)
                         await Task.Delay(1000).ConfigureAwait(false);
 
                     JobCompleted = false;
-                })).ConfigureAwait(false);
+                }).ConfigureAwait(false);
             }
         }
 
@@ -672,13 +657,13 @@ namespace Xiropht_Miner
                         break;
                 }
 
-                await Task.WhenAny(Task.Run(async () =>
+                await Task.Run(async () =>
                 {
                     while (currentMiningJobIndication == ClassMiningStats.CurrentJobIndication)
                         await Task.Delay(1000).ConfigureAwait(false);
 
                     JobCompleted = false;
-                })).ConfigureAwait(false);
+                }).ConfigureAwait(false);
             }
         }
 
@@ -687,12 +672,10 @@ namespace Xiropht_Miner
         /// </summary>
         private static async Task StartThreadMiningAsync(int idThread)
         {
-            decimal minRange = Math.Round((ClassMiningStats.CurrentMaxRangeJob / ClassMiningConfig.MiningConfigThread) * (idThread - 1), 0);
+            var minRange = Math.Round(ClassMiningStats.CurrentMaxRangeJob / ClassMiningConfig.MiningConfigThread * (idThread - 1), 0);
             if (minRange <= 1)
-            {
                 minRange = 2;
-            }
-            decimal maxRange = Math.Round(((ClassMiningStats.CurrentMaxRangeJob / ClassMiningConfig.MiningConfigThread) * idThread), 0);
+            var maxRange = Math.Round(ClassMiningStats.CurrentMaxRangeJob / ClassMiningConfig.MiningConfigThread * idThread, 0);
             ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Any | Job Difficulty: {ClassMiningStats.CurrentMiningDifficulty} | Job Range: {minRange}-{maxRange}", ClassConsoleEnumeration.IndexPoolConsoleBlueLog);
             var currentMiningJobIndication = ClassMiningStats.CurrentJobIndication;
 
@@ -700,20 +683,18 @@ namespace Xiropht_Miner
             {
                 if (currentMiningJobIndication != ClassMiningStats.CurrentJobIndication)
                 {
-                    minRange = Math.Round((ClassMiningStats.CurrentMaxRangeJob / ClassMiningConfig.MiningConfigThread) * (idThread - 1), 0);
+                    minRange = Math.Round(ClassMiningStats.CurrentMaxRangeJob / ClassMiningConfig.MiningConfigThread * (idThread - 1), 0);
                     if (minRange <= 1)
-                    {
                         minRange = 2;
-                    }
-                    maxRange = (Math.Round(((ClassMiningStats.CurrentMaxRangeJob / ClassMiningConfig.MiningConfigThread) * idThread), 0));
+                    maxRange = Math.Round(ClassMiningStats.CurrentMaxRangeJob / ClassMiningConfig.MiningConfigThread * idThread, 0);
                     currentMiningJobIndication = ClassMiningStats.CurrentJobIndication;
                     ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Any | Job Difficulty: {ClassMiningStats.CurrentMiningDifficulty} | Job Range: {minRange}-{maxRange}", ClassConsoleEnumeration.IndexPoolConsoleBlueLog);
-
                 }
-                string firstNumber = ClassUtility.GenerateNumberMathCalculation(minRange, maxRange);
-                string secondNumber = ClassUtility.GenerateNumberMathCalculation(minRange, maxRange);
 
-                for (int i = 0; i < ClassUtility.RandomOperatorCalculation.Length; i++)
+                var firstNumber = ClassUtility.GenerateNumberMathCalculation(minRange, maxRange);
+                var secondNumber = ClassUtility.GenerateNumberMathCalculation(minRange, maxRange);
+
+                for (var i = 0; i < ClassUtility.RandomOperatorCalculation.Length; i++)
                 {
                     if (ClassMiningConfig.MiningConfigUseIntelligentCalculation)
                     {
@@ -723,19 +704,19 @@ namespace Xiropht_Miner
 
                     if (i < ClassUtility.RandomOperatorCalculation.Length)
                     {
-                        string calculation = firstNumber + " " + ClassUtility.RandomOperatorCalculation[i] + " " + secondNumber;
-                        decimal calculationResult = ClassUtility.ComputeCalculation(firstNumber, ClassUtility.RandomOperatorCalculation[i], secondNumber);
+                        var calculation = firstNumber + " " + ClassUtility.RandomOperatorCalculation[i] + " " + secondNumber;
+                        var calculationResult = ClassUtility.ComputeCalculation(firstNumber, ClassUtility.RandomOperatorCalculation[i], secondNumber);
 
                         if (calculationResult >= ClassMiningStats.CurrentMinRangeJob && calculationResult <= ClassMiningStats.CurrentMaxRangeJob)
                         {
                             if (calculationResult - Math.Round(calculationResult, 0) == 0) // Check if the result contain decimal places, if yes ignore it. 
                             {
-                                string encryptedShare = MakeEncryptedShare(calculation, (idThread - 1));
+                                var encryptedShare = MakeEncryptedShare(calculation, idThread - 1);
 
                                 if (encryptedShare != ClassAlgoErrorEnumeration.AlgoError)
                                 {
                                     // Generate SHA512 hash for block hash indication.
-                                    string hashEncryptedShare = ClassUtility.GenerateSHA512(encryptedShare);
+                                    var hashEncryptedShare = ClassUtility.GenerateSHA512(encryptedShare);
 
                                     if (hashEncryptedShare == ClassMiningStats.CurrentJobIndication || hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
                                     {
@@ -745,7 +726,7 @@ namespace Xiropht_Miner
                                         if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
                                             ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Any | Block found: {firstNumber} {ClassUtility.RandomOperatorCalculation[i]} {secondNumber} = {calculationResult}");
 
-                                        JObject share = new JObject
+                                        var share = new JObject
                                         {
                                             { "type", ClassMiningRequest.TypeSubmit },
                                             { ClassMiningRequest.SubmitResult, calculationResult },
@@ -768,13 +749,12 @@ namespace Xiropht_Miner
                                 {
                                     if (calculationResult >= ClassMiningStats.CurrentMinRangeJob && calculationResult <= ClassMiningStats.CurrentMaxRangeJob)
                                     {
-
-                                        string encryptedShare = MakeEncryptedShare(calculation, (idThread - 1));
+                                        var encryptedShare = MakeEncryptedShare(calculation, idThread - 1);
 
                                         if (encryptedShare != ClassAlgoErrorEnumeration.AlgoError)
                                         {
                                             // Generate SHA512 hash for block hash indication.
-                                            string hashEncryptedShare = ClassUtility.GenerateSHA512(encryptedShare);
+                                            var hashEncryptedShare = ClassUtility.GenerateSHA512(encryptedShare);
 
                                             if (hashEncryptedShare == ClassMiningStats.CurrentJobIndication || hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
                                             {
@@ -784,7 +764,7 @@ namespace Xiropht_Miner
                                                 if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
                                                     ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Any | Block found: {secondNumber} {ClassUtility.RandomOperatorCalculation[i]} {firstNumber} = {calculationResult}");
 
-                                                JObject share = new JObject
+                                                var share = new JObject
                                                 {
                                                     { "type", ClassMiningRequest.TypeSubmit },
                                                     { ClassMiningRequest.SubmitResult, calculationResult },
@@ -810,13 +790,12 @@ namespace Xiropht_Miner
                             {
                                 if (calculationResult >= ClassMiningStats.CurrentMinRangeJob && calculationResult <= ClassMiningStats.CurrentMaxRangeJob)
                                 {
-
-                                    string encryptedShare = MakeEncryptedShare(calculation, (idThread - 1));
+                                    var encryptedShare = MakeEncryptedShare(calculation, idThread - 1);
 
                                     if (encryptedShare != ClassAlgoErrorEnumeration.AlgoError)
                                     {
                                         // Generate SHA512 hash for block hash indication.
-                                        string hashEncryptedShare = ClassUtility.GenerateSHA512(encryptedShare);
+                                        var hashEncryptedShare = ClassUtility.GenerateSHA512(encryptedShare);
 
                                         if (hashEncryptedShare == ClassMiningStats.CurrentJobIndication || hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
                                         {
@@ -826,7 +805,7 @@ namespace Xiropht_Miner
                                             if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
                                                 ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Any | Block found: {secondNumber} {ClassUtility.RandomOperatorCalculation[i]} {firstNumber} = {calculationResult}");
 
-                                            JObject share = new JObject
+                                            var share = new JObject
                                             {
                                                 { "type", ClassMiningRequest.TypeSubmit },
                                                 { ClassMiningRequest.SubmitResult, calculationResult },
@@ -850,13 +829,15 @@ namespace Xiropht_Miner
 
                 if (JobCompleted)
                 {
-                    await Task.WhenAny(Task.Run(async () =>
+                    var indication = currentMiningJobIndication;
+
+                    await Task.Run(async () =>
                     {
-                        while (currentMiningJobIndication == ClassMiningStats.CurrentJobIndication)
+                        while (indication == ClassMiningStats.CurrentJobIndication)
                             await Task.Delay(1000).ConfigureAwait(false);
 
                         JobCompleted = false;
-                    })).ConfigureAwait(false);
+                    }).ConfigureAwait(false);
                 }
             }
 
@@ -872,16 +853,14 @@ namespace Xiropht_Miner
         {
             try
             {
-                string encryptedShare = ClassUtility.StringToHexString(calculation + ClassMiningStats.CurrentBlockTimestampCreate);
+                var encryptedShare = ClassUtility.StringToHexString(calculation + ClassMiningStats.CurrentBlockTimestampCreate);
 
                 // Static XOR Encryption -> Key updated from the current mining method.
                 encryptedShare = ClassUtility.EncryptXorShare(encryptedShare, ClassMiningStats.CurrentRoundXorKey.ToString());
 
                 // Dynamic AES Encryption -> Size and Key's from the current mining method and the current block key encryption.
-                for (int i = 0; i < ClassMiningStats.CurrentRoundAesRound; i++)
-                {
+                for (var i = 0; i < ClassMiningStats.CurrentRoundAesRound; i++)
                     encryptedShare = ClassUtility.EncryptAesShare(encryptedShare, ClassMiningStats.CurrentBlockKey, Encoding.UTF8.GetBytes(ClassMiningStats.CurrentRoundAesKey), ClassMiningStats.CurrentRoundAesSize);
-                }
 
                 // Static XOR Encryption -> Key from the current mining method
                 encryptedShare = ClassUtility.EncryptXorShare(encryptedShare, ClassMiningStats.CurrentRoundXorKey.ToString());

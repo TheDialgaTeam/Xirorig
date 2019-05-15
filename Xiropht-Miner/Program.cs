@@ -22,7 +22,7 @@ namespace Xiropht_Miner
         public static bool Exit;
         private static Thread ThreadCommandLine;
 
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             EnableCatchUnexpectedException();
             Console.CancelKeyPress += Console_CancelKeyPress;
@@ -33,29 +33,27 @@ namespace Xiropht_Miner
             StartCommandLine();
             Task.Factory.StartNew(async () =>
             {
-                bool connected = await ClassMiningNetwork.StartMiningAsync();
+                var connected = await ClassMiningNetwork.StartMiningAsync();
+
                 while (!connected)
                 {
-                   await Task.Delay(5000);
-                   connected = await ClassMiningNetwork.StartMiningAsync();
+                    await Task.Delay(5000);
+                    connected = await ClassMiningNetwork.StartMiningAsync();
                 }
             }).ConfigureAwait(false);
         }
-
-
-
-
 
         #region Events 
 
         private static void StartCommandLine()
         {
-            ThreadCommandLine = new Thread(delegate ()
+            ThreadCommandLine = new Thread(delegate()
             {
                 ShowCommandLineHelp();
-                while(!Exit)
+
+                while (!Exit)
                 {
-                    StringBuilder input = new StringBuilder();
+                    var input = new StringBuilder();
                     var key = Console.ReadKey(true);
                     input.Append(key.KeyChar);
                     CommandLine(input.ToString().ToLower());
@@ -89,6 +87,7 @@ namespace Xiropht_Miner
                 case ClassCommandLine.CommandLineJob:
                     ClassConsole.ConsoleWriteLine("Current Mining Difficulty: " + ClassMiningStats.CurrentMiningDifficulty + " | Current Mining Job: " + ClassMiningStats.CurrentJobIndication + " | Block ID: " + ClassMiningStats.CurrentBlockId + " | Block Difficulty: " + ClassMiningStats.CurrentBlockDifficulty, ClassConsoleEnumeration.IndexPoolConsoleMagentaLog);
                     break;
+
                 case ClassCommandLine.CommandLineStats:
                     try
                     {
@@ -96,8 +95,8 @@ namespace Xiropht_Miner
                     }
                     catch
                     {
-
                     }
+
                     break;
             }
         }
@@ -107,10 +106,11 @@ namespace Xiropht_Miner
         /// </summary>
         private static void EnableCatchUnexpectedException()
         {
-            AppDomain.CurrentDomain.UnhandledException += delegate (object sender, UnhandledExceptionEventArgs args2)
+            AppDomain.CurrentDomain.UnhandledException += delegate(object sender, UnhandledExceptionEventArgs args2)
             {
                 var filePath = ClassUtility.ConvertPath(Directory.GetCurrentDirectory() + UnexpectedExceptionFile);
-                var exception = (Exception)args2.ExceptionObject;
+                var exception = (Exception) args2.ExceptionObject;
+
                 using (var writer = new StreamWriter(filePath, true))
                 {
                     writer.WriteLine("Message :" + exception.Message + "<br/>" + Environment.NewLine +
@@ -125,7 +125,6 @@ namespace Xiropht_Miner
                 Trace.TraceError(exception.StackTrace);
                 Console.WriteLine("Unexpected error catched, check the error file: " + ClassUtility.ConvertPath(Directory.GetCurrentDirectory() + UnexpectedExceptionFile));
                 Environment.Exit(1);
-
             };
         }
 
