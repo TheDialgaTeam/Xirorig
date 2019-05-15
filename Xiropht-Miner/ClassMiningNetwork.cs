@@ -320,24 +320,24 @@ namespace Xiropht_Miner
                                 ClassMiningStats.TotalGoodShare++;
                                 ClassConsole.ConsoleWriteLine("Good Share ! [Total = " + ClassMiningStats.TotalGoodShare + "]", ClassConsoleEnumeration.IndexPoolConsoleGreenLog);
 
-                                if (!IsDevRound)
-                                    MinerRoundCounter--;
-                                else
-                                    DevRoundCounter--;
+                                //if (!IsDevRound)
+                                //    MinerRoundCounter--;
+                                //else
+                                //    DevRoundCounter--;
 
-                                if (MinerRoundCounter <= 0)
-                                {
-                                    // TRIGGER A DEV ROUND >
-                                    DisconnectMiner();
-                                    ClassConsole.ConsoleWriteLine("Starting Dev Round!", ClassConsoleEnumeration.IndexPoolConsoleYellowLog);
-                                }
+                                //if (MinerRoundCounter <= 0)
+                                //{
+                                //    // TRIGGER A DEV ROUND >
+                                //    DisconnectMiner();
+                                //    ClassConsole.ConsoleWriteLine("Starting Dev Round!", ClassConsoleEnumeration.IndexPoolConsoleYellowLog);
+                                //}
 
-                                if (DevRoundCounter <= 0)
-                                {
-                                    // TRIGGER A MINER ROUND >
-                                    ClassConsole.ConsoleWriteLine("End Dev Round!", ClassConsoleEnumeration.IndexPoolConsoleYellowLog);
-                                    DisconnectMiner();
-                                }
+                                //if (DevRoundCounter <= 0)
+                                //{
+                                //    // TRIGGER A MINER ROUND >
+                                //    ClassConsole.ConsoleWriteLine("End Dev Round!", ClassConsoleEnumeration.IndexPoolConsoleYellowLog);
+                                //    DisconnectMiner();
+                                //}
                                 break;
                             case ClassMiningRequest.TypeResultShareInvalid:
                                 ClassMiningStats.TotalInvalidShare++;
