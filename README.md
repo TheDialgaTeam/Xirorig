@@ -1,16 +1,13 @@
-# Xiropht-Miner
-**Xiropht Miner compatible with Xiropht Pool example tool: https://github.com/XIROPHT/Xiropht-Mining-Pool**
+# Xirorig
+**Xiropht Miner compatible with Xiropht Pool: https://github.com/XIROPHT/Xiropht-Mining-Pool**
 
-<h2>Hashrate Test Result</h2>
+Xirorig is a high performance Xiropht (XIRO) CPU miner, with official support for Windows. This is based on Xiropht-Miner officialt tools with modifications.
 
--> Raspberry PI 3 B+ [ARM64] | 1200H/s to 1600H/s | Raspbian OS.
-
--> Ryzen 7 2700x 8 Threads allocated [AMD64] | 15000H/s | Ubuntu 18.04 64bit.
-
--> Ryzen 7 2700x 8 Threads + Thread Affinity + Task Priority [AMD64] | 5000H/s | Windows 10 64bit.
+- This is the **CPU-mining** pool version. There is no solo or GPU miners at the moment.
 
 **Newtonsoft.Json library is used since version 0.0.0.1R for generated json syntax on mining packets: https://github.com/JamesNK/Newtonsoft.Json**
 
 **Developers:**
 
 - Xiropht (Sam Segura)
+- The Dialga Team (Yong Jian Ming)

@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Xiropht_Connector_All.Setting;
 
 namespace Xiropht_Miner
@@ -16,6 +13,14 @@ namespace Xiropht_Miner
         public const string MiningConfigWalletAdress = "MINING_WALLET_ADDRESS";
         public const string MiningConfigThread = "MINING_THREAD";
         public const string MiningConfigThreadIntensity = "MINING_THREAD_INTENSITY";
+        public const string MiningConfigUseIntelligentCalculation  = "MINING_USE_INTELLIGENT_CALCULATION";
+        public const string MiningConfigAdditionJobThread = "MINING_ADDITION_JOB_THREAD";
+        public const string MiningConfigSubtractionJobThread = "MINING_SUBTRACTION_JOB_THREAD";
+        public const string MiningConfigMultiplicationJobThread = "MINING_MULTIPLICAITON_JOB_THREAD";
+        public const string MiningConfigDivisionJobThread = "MINING_DIVISION_JOB_THREAD";
+        public const string MiningConfigModulusJobThread = "MINING_MODULUS_JOB_THREAD";
+        public const string MiningConfigProcessorAffinity = "MINING_PROCESSOR_AFFINITY";
+        public const string MiningConfigDeveloperFee = "MINING_DEV_FEE";
     }
 
     public class ClassMiningConfig
@@ -26,6 +31,14 @@ namespace Xiropht_Miner
         public static string MiningWalletAddress;
         public static int MiningConfigThread;
         public static int MiningConfigThreadIntensity;
+        public static bool MiningConfigUseIntelligentCalculation;
+        public static int MiningConfigAdditionJobThread;
+        public static int MiningConfigSubtractionJobThread;
+        public static int MiningConfigMultiplicationJobThread;
+        public static int MiningConfigDivisionJobThread;
+        public static int MiningConfigModulusJobThread;
+        public static int MiningConfigProcessorAffinity;
+        public static int MiningConfigDeveloperFee = 1;
 
         /// <summary>
         /// Initilize mining configuration.
@@ -81,7 +94,47 @@ namespace Xiropht_Miner
                                                         MiningConfigThreadIntensity = 0;
                                                     }
                                                     break;
+                                                case ClassMiningConfigEnumeration.MiningConfigUseIntelligentCalculation:
+                                                    MiningConfigUseIntelligentCalculation = splitLine[1].Equals("Y", StringComparison.OrdinalIgnoreCase);
+                                                    break;
+                                                case ClassMiningConfigEnumeration.MiningConfigAdditionJobThread:
+                                                    MiningConfigAdditionJobThread = int.Parse(splitLine[1]);
+                                                    if (MiningConfigAdditionJobThread < 0)
+                                                        MiningConfigAdditionJobThread = 0;
+                                                    break;
+                                                case ClassMiningConfigEnumeration.MiningConfigSubtractionJobThread:
+                                                    MiningConfigSubtractionJobThread = int.Parse(splitLine[1]);
+                                                    if (MiningConfigSubtractionJobThread < 0)
+                                                        MiningConfigSubtractionJobThread = 0;
+                                                    break;
+                                                case ClassMiningConfigEnumeration.MiningConfigMultiplicationJobThread:
+                                                    MiningConfigMultiplicationJobThread = int.Parse(splitLine[1]);
+                                                    if (MiningConfigMultiplicationJobThread < 0)
+                                                        MiningConfigMultiplicationJobThread = 0;
+                                                    break;
+                                                case ClassMiningConfigEnumeration.MiningConfigDivisionJobThread:
+                                                    MiningConfigDivisionJobThread = int.Parse(splitLine[1]);
+                                                    if (MiningConfigDivisionJobThread < 0)
+                                                        MiningConfigDivisionJobThread = 0;
+                                                    break;
+                                                case ClassMiningConfigEnumeration.MiningConfigModulusJobThread:
+                                                    MiningConfigModulusJobThread = int.Parse(splitLine[1]);
+                                                    if (MiningConfigModulusJobThread < 0)
+                                                        MiningConfigModulusJobThread = 0;
+                                                    break;
+                                                case ClassMiningConfigEnumeration.MiningConfigProcessorAffinity:
+                                                    MiningConfigProcessorAffinity = int.Parse(splitLine[1].Replace("0x", ""), NumberStyles.HexNumber);
 
+                                                    var currentProcess = Process.GetCurrentProcess();
+                                                    currentProcess.ProcessorAffinity = (IntPtr) MiningConfigProcessorAffinity;
+                                                    break;
+                                                case ClassMiningConfigEnumeration.MiningConfigDeveloperFee:
+                                                    MiningConfigDeveloperFee = int.Parse(splitLine[1]);
+                                                    if (MiningConfigDeveloperFee < 1)
+                                                        MiningConfigDeveloperFee = 1;
+                                                    if (MiningConfigDeveloperFee > 100)
+                                                        MiningConfigDeveloperFee = 100;
+                                                    break;
                                             }
                                         }
                                         catch
@@ -153,6 +206,13 @@ namespace Xiropht_Miner
                     streamWriterConfigMiner.WriteLine(ClassMiningConfigEnumeration.MiningConfigPoolPort + "=" + MiningPoolPort);
                     streamWriterConfigMiner.WriteLine(ClassMiningConfigEnumeration.MiningConfigThread + "=" + MiningConfigThread);
                     streamWriterConfigMiner.WriteLine(ClassMiningConfigEnumeration.MiningConfigThreadIntensity + "=" + MiningConfigThreadIntensity);
+                    streamWriterConfigMiner.WriteLine(ClassMiningConfigEnumeration.MiningConfigUseIntelligentCalculation + "=" + (MiningConfigUseIntelligentCalculation ? "Y" : "N"));
+                    streamWriterConfigMiner.WriteLine(ClassMiningConfigEnumeration.MiningConfigAdditionJobThread + "=" + 1);
+                    streamWriterConfigMiner.WriteLine(ClassMiningConfigEnumeration.MiningConfigSubtractionJobThread + "=" + 1);
+                    streamWriterConfigMiner.WriteLine(ClassMiningConfigEnumeration.MiningConfigMultiplicationJobThread + "=" + 1);
+                    streamWriterConfigMiner.WriteLine(ClassMiningConfigEnumeration.MiningConfigDivisionJobThread + "=" + 1);
+                    streamWriterConfigMiner.WriteLine(ClassMiningConfigEnumeration.MiningConfigModulusJobThread + "=" + 1);
+                    streamWriterConfigMiner.WriteLine(ClassMiningConfigEnumeration.MiningConfigDeveloperFee + "=" + 1);
                 }
                 ClassConsole.ConsoleWriteLine(ClassUtility.ConvertPath(Directory.GetCurrentDirectory() + MiningConfigFile) + " miner config file saved", ClassConsoleEnumeration.IndexPoolConsoleGreenLog);
             }

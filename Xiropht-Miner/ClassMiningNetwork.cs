@@ -7,7 +7,6 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Xiropht_Connector_All.Seed;
 using Xiropht_Connector_All.Setting;
 
 namespace Xiropht_Miner
@@ -20,6 +19,9 @@ namespace Xiropht_Miner
         public static bool IsConnected;
         public static bool IsLogged;
         private static long LastPacketReceived;
+        private static int MinerRoundCounter = -1;
+        private static int DevRoundCounter = -1;
+        private static bool IsDevRound = false;
 
         /// <summary>
         /// Start mining.
@@ -217,6 +219,8 @@ namespace Xiropht_Miner
             return true;
         }
 
+        private static SemaphoreSlim SemaphoreSlim { get; } = new SemaphoreSlim(1, 1);
+
         /// <summary>
         /// Send packet to mining pool
         /// </summary>
@@ -224,13 +228,15 @@ namespace Xiropht_Miner
         /// <returns></returns>
         public static async Task<bool> SendPacketToPoolAsync(string packet)
         {
+            await SemaphoreSlim.WaitAsync().ConfigureAwait(false);
+
             try
             {
                 using (var _connectorStream = new NetworkStream(minerConnection.Client))
                 {
                     using (var bufferedNetworkStream = new BufferedStream(_connectorStream, ClassConnectorSetting.MaxNetworkPacketSize))
                     {
-                        var packetByte = Encoding.UTF8.GetBytes(packet + "\n"); 
+                        var packetByte = Encoding.UTF8.GetBytes(packet + "\n");
                         await bufferedNetworkStream.WriteAsync(packetByte, 0, packetByte.Length);
                         await bufferedNetworkStream.FlushAsync();
                     }
@@ -241,6 +247,10 @@ namespace Xiropht_Miner
                 IsConnected = false;
                 minerConnection?.Close();
                 return false;
+            }
+            finally
+            {
+                SemaphoreSlim.Release();
             }
 
             return true;
@@ -270,6 +280,8 @@ namespace Xiropht_Miner
                             if (jsonPacket.ContainsKey(ClassMiningRequest.TypeLoginOk))
                             {
                                 ClassConsole.ConsoleWriteLine("Login/Wallet Address accepted by the pool. Waiting job.", ClassConsoleEnumeration.IndexPoolConsoleGreenLog);
+                                MinerRoundCounter = 100 - ClassMiningConfig.MiningConfigDeveloperFee;
+                                DevRoundCounter = ClassMiningConfig.MiningConfigDeveloperFee;
                             }
                         }
                         break;
@@ -299,8 +311,6 @@ namespace Xiropht_Miner
                         ClassMining.ProceedMining();
 
                         ClassConsole.ConsoleWriteLine("New Mining Job: " + ClassMiningStats.CurrentJobIndication + " | Job Difficulty: " + ClassMiningStats.CurrentMiningDifficulty + " | Block ID: " + ClassMiningStats.CurrentBlockId + " | Block Difficulty: " + ClassMiningStats.CurrentBlockDifficulty + " | Block Hash Indication: " + ClassMiningStats.CurrentBlockIndication, ClassConsoleEnumeration.IndexPoolConsoleMagentaLog);
-                        ClassConsole.ConsoleWriteLine("Mining Job range received: " + ClassMiningStats.CurrentMinRangeJob+"|"+ClassMiningStats.CurrentMaxRangeJob, ClassConsoleEnumeration.IndexPoolConsoleMagentaLog);
-
                         break;
                     case ClassMiningRequest.TypeShare:
                         LastPacketReceived = DateTimeOffset.Now.ToUnixTimeSeconds();
@@ -309,6 +319,25 @@ namespace Xiropht_Miner
                             case ClassMiningRequest.TypeResultShareOk:
                                 ClassMiningStats.TotalGoodShare++;
                                 ClassConsole.ConsoleWriteLine("Good Share ! [Total = " + ClassMiningStats.TotalGoodShare + "]", ClassConsoleEnumeration.IndexPoolConsoleGreenLog);
+
+                                if (!IsDevRound)
+                                    MinerRoundCounter--;
+                                else
+                                    DevRoundCounter--;
+
+                                if (MinerRoundCounter <= 0)
+                                {
+                                    // TRIGGER A DEV ROUND >
+                                    DisconnectMiner();
+                                    ClassConsole.ConsoleWriteLine("Starting Dev Round!", ClassConsoleEnumeration.IndexPoolConsoleYellowLog);
+                                }
+
+                                if (DevRoundCounter <= 0)
+                                {
+                                    // TRIGGER A MINER ROUND >
+                                    ClassConsole.ConsoleWriteLine("End Dev Round!", ClassConsoleEnumeration.IndexPoolConsoleYellowLog);
+                                    DisconnectMiner();
+                                }
                                 break;
                             case ClassMiningRequest.TypeResultShareInvalid:
                                 ClassMiningStats.TotalInvalidShare++;
