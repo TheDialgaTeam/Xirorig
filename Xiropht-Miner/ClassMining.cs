@@ -710,8 +710,8 @@ namespace Xiropht_Miner
                     ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Any | Job Difficulty: {ClassMiningStats.CurrentMiningDifficulty} | Job Range: {minRange}-{maxRange}", ClassConsoleEnumeration.IndexPoolConsoleBlueLog);
 
                 }
-                string firstNumber = ClassUtility.GenerateNumberMathCalculation(minRange, maxRange, ClassMiningStats.CurrentMaxRangeJob.ToString("F0").Length);
-                string secondNumber = ClassUtility.GenerateNumberMathCalculation(minRange, maxRange, ClassMiningStats.CurrentMaxRangeJob.ToString("F0").Length);
+                string firstNumber = ClassUtility.GenerateNumberMathCalculation(minRange, maxRange);
+                string secondNumber = ClassUtility.GenerateNumberMathCalculation(minRange, maxRange);
 
                 for (int i = 0; i < ClassUtility.RandomOperatorCalculation.Length; i++)
                 {

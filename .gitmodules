@@ -1,0 +1,3 @@
+[submodule "Xiropht-Connector-All"]
+	path = Xiropht-Connector-All
+	url = https://github.com/XIROPHT/Xiropht-Connector-All.git
