@@ -731,96 +731,43 @@ namespace Xiropht_Miner
 
                 for (var i = 0; i < ClassUtility.RandomOperatorCalculation.Length; i++)
                 {
-                    if (ClassMiningConfig.MiningConfigUseIntelligentCalculation)
-                    {
-                        if (i == 1 || i == 4)
-                            continue;
-                    }
+                    var calculation = firstNumber + " " + ClassUtility.RandomOperatorCalculation[i] + " " + secondNumber;
+                    var calculationResult = ClassUtility.ComputeCalculation(firstNumber, ClassUtility.RandomOperatorCalculation[i], secondNumber);
 
-                    if (i < ClassUtility.RandomOperatorCalculation.Length)
+                    if (calculationResult >= ClassMiningStats.CurrentMinRangeJob && calculationResult <= ClassMiningStats.CurrentMaxRangeJob)
                     {
-                        var calculation = firstNumber + " " + ClassUtility.RandomOperatorCalculation[i] + " " + secondNumber;
-                        var calculationResult = ClassUtility.ComputeCalculation(firstNumber, ClassUtility.RandomOperatorCalculation[i], secondNumber);
-
-                        if (calculationResult >= ClassMiningStats.CurrentMinRangeJob && calculationResult <= ClassMiningStats.CurrentMaxRangeJob)
+                        if (calculationResult - Math.Round(calculationResult, 0) == 0) // Check if the result contain decimal places, if yes ignore it. 
                         {
-                            if (calculationResult - Math.Round(calculationResult, 0) == 0) // Check if the result contain decimal places, if yes ignore it. 
+                            var encryptedShare = MakeEncryptedShare(calculation, idThread - 1);
+
+                            if (encryptedShare != ClassAlgoErrorEnumeration.AlgoError)
                             {
-                                var encryptedShare = MakeEncryptedShare(calculation, idThread - 1);
+                                // Generate SHA512 hash for block hash indication.
+                                var hashEncryptedShare = ClassUtility.GenerateSHA512(encryptedShare);
 
-                                if (encryptedShare != ClassAlgoErrorEnumeration.AlgoError)
+                                if (hashEncryptedShare == ClassMiningStats.CurrentJobIndication || hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
                                 {
-                                    // Generate SHA512 hash for block hash indication.
-                                    var hashEncryptedShare = ClassUtility.GenerateSHA512(encryptedShare);
+                                    if (hashEncryptedShare == ClassMiningStats.CurrentJobIndication)
+                                        ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Any | Job found: {firstNumber} {ClassUtility.RandomOperatorCalculation[i]} {secondNumber} = {calculationResult}");
 
-                                    if (hashEncryptedShare == ClassMiningStats.CurrentJobIndication || hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
+                                    if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
+                                        ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Any | Block found: {firstNumber} {ClassUtility.RandomOperatorCalculation[i]} {secondNumber} = {calculationResult}");
+
+                                    var share = new JObject
                                     {
-                                        if (hashEncryptedShare == ClassMiningStats.CurrentJobIndication)
-                                            ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Any | Job found: {firstNumber} {ClassUtility.RandomOperatorCalculation[i]} {secondNumber} = {calculationResult}");
+                                        { "type", ClassMiningRequest.TypeSubmit },
+                                        { ClassMiningRequest.SubmitResult, calculationResult },
+                                        { ClassMiningRequest.SubmitFirstNumber, firstNumber },
+                                        { ClassMiningRequest.SubmitSecondNumber, secondNumber },
+                                        { ClassMiningRequest.SubmitOperator, ClassUtility.RandomOperatorCalculation[i] },
+                                        { ClassMiningRequest.SubmitShare, encryptedShare },
+                                        { ClassMiningRequest.SubmitHash, hashEncryptedShare }
+                                    };
 
-                                        if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
-                                            ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Any | Block found: {firstNumber} {ClassUtility.RandomOperatorCalculation[i]} {secondNumber} = {calculationResult}");
+                                    JobCompleted = await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
 
-                                        var share = new JObject
-                                        {
-                                            { "type", ClassMiningRequest.TypeSubmit },
-                                            { ClassMiningRequest.SubmitResult, calculationResult },
-                                            { ClassMiningRequest.SubmitFirstNumber, firstNumber },
-                                            { ClassMiningRequest.SubmitSecondNumber, secondNumber },
-                                            { ClassMiningRequest.SubmitOperator, ClassUtility.RandomOperatorCalculation[i] },
-                                            { ClassMiningRequest.SubmitShare, encryptedShare },
-                                            { ClassMiningRequest.SubmitHash, hashEncryptedShare }
-                                        };
-                                        
-                                        JobCompleted = await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
-
-                                        if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
-                                            JobCompleted = false;
-                                    }
-                                }
-                            }
-                            else // Test reverted
-                            {
-                                calculation = secondNumber + " " + ClassUtility.RandomOperatorCalculation[i] + " " + firstNumber;
-                                calculationResult = ClassUtility.ComputeCalculation(secondNumber, ClassUtility.RandomOperatorCalculation[i], firstNumber);
-
-                                if (calculationResult - Math.Round(calculationResult, 0) == 0) // Check if the result contain decimal places, if yes ignore it. 
-                                {
-                                    if (calculationResult >= ClassMiningStats.CurrentMinRangeJob && calculationResult <= ClassMiningStats.CurrentMaxRangeJob)
-                                    {
-                                        var encryptedShare = MakeEncryptedShare(calculation, idThread - 1);
-
-                                        if (encryptedShare != ClassAlgoErrorEnumeration.AlgoError)
-                                        {
-                                            // Generate SHA512 hash for block hash indication.
-                                            var hashEncryptedShare = ClassUtility.GenerateSHA512(encryptedShare);
-
-                                            if (hashEncryptedShare == ClassMiningStats.CurrentJobIndication || hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
-                                            {
-                                                if (hashEncryptedShare == ClassMiningStats.CurrentJobIndication)
-                                                    ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Any | Job found: {secondNumber} {ClassUtility.RandomOperatorCalculation[i]} {firstNumber} = {calculationResult}");
-
-                                                if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
-                                                    ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Any | Block found: {secondNumber} {ClassUtility.RandomOperatorCalculation[i]} {firstNumber} = {calculationResult}");
-
-                                                var share = new JObject
-                                                {
-                                                    { "type", ClassMiningRequest.TypeSubmit },
-                                                    { ClassMiningRequest.SubmitResult, calculationResult },
-                                                    { ClassMiningRequest.SubmitFirstNumber, secondNumber },
-                                                    { ClassMiningRequest.SubmitSecondNumber, firstNumber },
-                                                    { ClassMiningRequest.SubmitOperator, ClassUtility.RandomOperatorCalculation[i] },
-                                                    { ClassMiningRequest.SubmitShare, encryptedShare },
-                                                    { ClassMiningRequest.SubmitHash, hashEncryptedShare }
-                                                };
-
-                                                JobCompleted = await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
-
-                                                if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
-                                                    JobCompleted = false;
-                                            }
-                                        }
-                                    }
+                                    if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
+                                        JobCompleted = false;
                                 }
                             }
                         }
@@ -864,6 +811,50 @@ namespace Xiropht_Miner
                                             if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
                                                 JobCompleted = false;
                                         }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else // Test reverted
+                    {
+                        calculation = secondNumber + " " + ClassUtility.RandomOperatorCalculation[i] + " " + firstNumber;
+                        calculationResult = ClassUtility.ComputeCalculation(secondNumber, ClassUtility.RandomOperatorCalculation[i], firstNumber);
+
+                        if (calculationResult - Math.Round(calculationResult, 0) == 0) // Check if the result contain decimal places, if yes ignore it. 
+                        {
+                            if (calculationResult >= ClassMiningStats.CurrentMinRangeJob && calculationResult <= ClassMiningStats.CurrentMaxRangeJob)
+                            {
+                                var encryptedShare = MakeEncryptedShare(calculation, idThread - 1);
+
+                                if (encryptedShare != ClassAlgoErrorEnumeration.AlgoError)
+                                {
+                                    // Generate SHA512 hash for block hash indication.
+                                    var hashEncryptedShare = ClassUtility.GenerateSHA512(encryptedShare);
+
+                                    if (hashEncryptedShare == ClassMiningStats.CurrentJobIndication || hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
+                                    {
+                                        if (hashEncryptedShare == ClassMiningStats.CurrentJobIndication)
+                                            ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Any | Job found: {secondNumber} {ClassUtility.RandomOperatorCalculation[i]} {firstNumber} = {calculationResult}");
+
+                                        if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
+                                            ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Any | Block found: {secondNumber} {ClassUtility.RandomOperatorCalculation[i]} {firstNumber} = {calculationResult}");
+
+                                        var share = new JObject
+                                        {
+                                            { "type", ClassMiningRequest.TypeSubmit },
+                                            { ClassMiningRequest.SubmitResult, calculationResult },
+                                            { ClassMiningRequest.SubmitFirstNumber, secondNumber },
+                                            { ClassMiningRequest.SubmitSecondNumber, firstNumber },
+                                            { ClassMiningRequest.SubmitOperator, ClassUtility.RandomOperatorCalculation[i] },
+                                            { ClassMiningRequest.SubmitShare, encryptedShare },
+                                            { ClassMiningRequest.SubmitHash, hashEncryptedShare }
+                                        };
+
+                                        JobCompleted = await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
+
+                                        if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
+                                            JobCompleted = false;
                                     }
                                 }
                             }
