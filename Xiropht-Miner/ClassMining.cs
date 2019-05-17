@@ -227,7 +227,7 @@ namespace Xiropht_Miner
 
                 for (var i = 0; i < ThreadMiningAdditionArray.Length; i++)
                 {
-                    if (ThreadMiningAdditionArray[i] == null || (!ThreadMiningAdditionArray[i].IsAlive && ThreadMiningAdditionArray[i] == null))
+                    if (ThreadMiningAdditionArray[i] == null || !ThreadMiningAdditionArray[i].IsAlive && ThreadMiningAdditionArray[i] == null)
                         continue;
 
                     DictionaryMiningThread[i + ThreadMiningAdditionIndexOffset] = 0;
@@ -237,7 +237,7 @@ namespace Xiropht_Miner
 
                 for (var i = 0; i < ThreadMiningSubtractionArray.Length; i++)
                 {
-                    if (ThreadMiningSubtractionArray[i] == null || (!ThreadMiningSubtractionArray[i].IsAlive && ThreadMiningSubtractionArray[i] == null))
+                    if (ThreadMiningSubtractionArray[i] == null || !ThreadMiningSubtractionArray[i].IsAlive && ThreadMiningSubtractionArray[i] == null)
                         continue;
 
                     DictionaryMiningThread[i + ThreadMiningSubtractionIndexOffset] = 0;
@@ -247,7 +247,7 @@ namespace Xiropht_Miner
 
                 for (var i = 0; i < ThreadMiningMultiplicationArray.Length; i++)
                 {
-                    if (ThreadMiningMultiplicationArray[i] == null || (!ThreadMiningMultiplicationArray[i].IsAlive && ThreadMiningMultiplicationArray[i] == null))
+                    if (ThreadMiningMultiplicationArray[i] == null || !ThreadMiningMultiplicationArray[i].IsAlive && ThreadMiningMultiplicationArray[i] == null)
                         continue;
 
                     DictionaryMiningThread[i + ThreadMiningMultiplicationIndexOffset] = 0;
@@ -257,7 +257,7 @@ namespace Xiropht_Miner
 
                 for (var i = 0; i < ThreadMiningDivisionArray.Length; i++)
                 {
-                    if (ThreadMiningDivisionArray[i] == null || (!ThreadMiningDivisionArray[i].IsAlive && ThreadMiningDivisionArray[i] == null))
+                    if (ThreadMiningDivisionArray[i] == null || !ThreadMiningDivisionArray[i].IsAlive && ThreadMiningDivisionArray[i] == null)
                         continue;
 
                     DictionaryMiningThread[i + ThreadMiningDivisionIndexOffset] = 0;
@@ -267,7 +267,7 @@ namespace Xiropht_Miner
 
                 for (var i = 0; i < ThreadMiningModulusArray.Length; i++)
                 {
-                    if (ThreadMiningModulusArray[i] == null || (!ThreadMiningModulusArray[i].IsAlive && ThreadMiningModulusArray[i] == null))
+                    if (ThreadMiningModulusArray[i] == null || !ThreadMiningModulusArray[i].IsAlive && ThreadMiningModulusArray[i] == null)
                         continue;
 
                     DictionaryMiningThread[i + ThreadMiningModulusIndexOffset] = 0;
@@ -338,6 +338,13 @@ namespace Xiropht_Miner
                         };
 
                         JobCompleted = await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
+
+                        if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
+                        {
+                            JobCompleted = false;
+                            continue;
+                        }
+
                         break;
                     }
 
@@ -416,6 +423,13 @@ namespace Xiropht_Miner
                         };
 
                         JobCompleted = await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
+
+                        if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
+                        {
+                            JobCompleted = false;
+                            continue;
+                        }
+
                         break;
                     }
 
@@ -497,6 +511,13 @@ namespace Xiropht_Miner
                         };
 
                         JobCompleted = await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
+
+                        if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
+                        {
+                            JobCompleted = false;
+                            continue;
+                        }
+
                         break;
                     }
 
@@ -578,6 +599,13 @@ namespace Xiropht_Miner
                         };
 
                         JobCompleted = await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
+
+                        if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
+                        {
+                            JobCompleted = false;
+                            continue;
+                        }
+
                         break;
                     }
 
@@ -650,6 +678,13 @@ namespace Xiropht_Miner
                         };
 
                         JobCompleted = await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
+
+                        if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
+                        {
+                            JobCompleted = false;
+                            continue;
+                        }
+
                         break;
                     }
 
@@ -736,7 +771,11 @@ namespace Xiropht_Miner
                                             { ClassMiningRequest.SubmitShare, encryptedShare },
                                             { ClassMiningRequest.SubmitHash, hashEncryptedShare }
                                         };
+                                        
                                         JobCompleted = await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
+
+                                        if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
+                                            JobCompleted = false;
                                     }
                                 }
                             }
@@ -774,7 +813,11 @@ namespace Xiropht_Miner
                                                     { ClassMiningRequest.SubmitShare, encryptedShare },
                                                     { ClassMiningRequest.SubmitHash, hashEncryptedShare }
                                                 };
+
                                                 JobCompleted = await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
+
+                                                if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
+                                                    JobCompleted = false;
                                             }
                                         }
                                     }
@@ -815,7 +858,11 @@ namespace Xiropht_Miner
                                                 { ClassMiningRequest.SubmitShare, encryptedShare },
                                                 { ClassMiningRequest.SubmitHash, hashEncryptedShare }
                                             };
+
                                             JobCompleted = await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
+
+                                            if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
+                                                JobCompleted = false;
                                         }
                                     }
                                 }
@@ -827,18 +874,18 @@ namespace Xiropht_Miner
                         break;
                 }
 
-                if (JobCompleted)
+                if (!JobCompleted)
+                    continue;
+                
+                var indication = currentMiningJobIndication;
+
+                await Task.Run(async () =>
                 {
-                    var indication = currentMiningJobIndication;
+                    while (indication == ClassMiningStats.CurrentJobIndication)
+                        await Task.Delay(1000).ConfigureAwait(false);
 
-                    await Task.Run(async () =>
-                    {
-                        while (indication == ClassMiningStats.CurrentJobIndication)
-                            await Task.Delay(1000).ConfigureAwait(false);
-
-                        JobCompleted = false;
-                    }).ConfigureAwait(false);
-                }
+                    JobCompleted = false;
+                }).ConfigureAwait(false);
             }
 
             ThreadMiningRunning = false;

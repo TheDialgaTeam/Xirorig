@@ -19,7 +19,9 @@ namespace Xiropht_Miner
     public class Program
     {
         private const string UnexpectedExceptionFile = "\\error_miner.txt";
+
         public static bool Exit;
+
         private static Thread ThreadCommandLine;
 
         private static void Main(string[] args)
@@ -123,7 +125,7 @@ namespace Xiropht_Miner
                 }
 
                 Trace.TraceError(exception.StackTrace);
-                Console.WriteLine("Unexpected error catched, check the error file: " + ClassUtility.ConvertPath(Directory.GetCurrentDirectory() + UnexpectedExceptionFile));
+                Console.WriteLine("Unexpected error catch, check the error file: " + ClassUtility.ConvertPath(Directory.GetCurrentDirectory() + UnexpectedExceptionFile));
                 Environment.Exit(1);
             };
         }

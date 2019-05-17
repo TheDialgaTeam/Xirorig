@@ -4,13 +4,13 @@ using System.Runtime.InteropServices;
 // Les informations générales relatives à un assembly dépendent de
 // l'ensemble d'attributs suivant. Changez les valeurs de ces attributs pour modifier les informations
 // associées à un assembly.
-[assembly: AssemblyTitle("Xiropht Miner")]
+[assembly: AssemblyTitle("Xiropht Pool Miner")]
 [assembly: AssemblyDescription("Xiropht miner designed to work on a mining pool")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Xiropht")]
-[assembly: AssemblyProduct("Xiropht Miner")]
-[assembly: AssemblyCopyright("Copyright © Xiropht Developper 2019")]
-[assembly: AssemblyTrademark("Xiropt")]
+[assembly: AssemblyCompany("Xiropht, The Dialga Team")]
+[assembly: AssemblyProduct("Xirorig")]
+[assembly: AssemblyCopyright("Copyright © Xiropht Developer, The Dialga Team 2019")]
+[assembly: AssemblyTrademark("Xiropht, The Dialga Team")]
 [assembly: AssemblyCulture("")]
 
 // L'affectation de la valeur false à ComVisible rend les types invisibles dans cet assembly
@@ -32,4 +32,4 @@ using System.Runtime.InteropServices;
 // en utilisant '*', comme indiqué ci-dessous :
 // [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("0.0.0.5")]
-[assembly: AssemblyFileVersion("0.0.0.5")]
+[assembly: AssemblyFileVersion("0.0.0.1")]
