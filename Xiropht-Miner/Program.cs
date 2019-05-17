@@ -30,7 +30,7 @@ namespace Xiropht_Miner
             Console.CancelKeyPress += Console_CancelKeyPress;
 
             Thread.CurrentThread.Name = Path.GetFileName(Environment.GetCommandLineArgs()[0]);
-            ClassConsole.ConsoleWriteLine(ClassConnectorSetting.CoinName + " Miner - " + Assembly.GetExecutingAssembly().GetName().Version + "R");
+            ClassConsole.ConsoleWriteLine($"{ClassConnectorSetting.CoinName} Miner (Xirorig) - {Assembly.GetExecutingAssembly().GetName().Version}R ({FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion})");
             ClassMiningConfig.MiningConfigInitialization();
             StartCommandLine();
             Task.Factory.StartNew(async () =>
