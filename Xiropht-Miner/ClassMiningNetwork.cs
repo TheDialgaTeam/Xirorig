@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Xiropht_Connector_All.Setting;
+using Xiropht_Connector_All.Utils;
 
 namespace Xiropht_Miner
 {
@@ -296,7 +297,7 @@ namespace Xiropht_Miner
                         ClassMiningStats.CurrentBlockKey = jsonPacket[ClassMiningRequest.TypeBlockKey].ToString();
                         ClassMiningStats.CurrentBlockIndication = jsonPacket[ClassMiningRequest.TypeBlockIndication].ToString();
                         ClassMiningStats.CurrentBlockDifficulty = decimal.Parse(jsonPacket[ClassMiningRequest.TypeBlockDifficulty].ToString());
-                        ClassMiningStats.CurrentJobIndication = jsonPacket[ClassMiningRequest.TypeJobIndication].ToString();
+                        ClassMiningStats.CurrentJobIndication = ClassUtils.DecompressData(jsonPacket[ClassMiningRequest.TypeJobIndication].ToString());
                         ClassMiningStats.CurrentMinRangeJob = decimal.Parse(jsonPacket[ClassMiningRequest.TypeMinRange].ToString());
                         ClassMiningStats.CurrentMaxRangeJob = decimal.Parse(jsonPacket[ClassMiningRequest.TypeMaxRange].ToString());
                         ClassMiningStats.CurrentMethodName = jsonPacket[ClassMiningRequest.TypeJobMiningMethodName].ToString();
@@ -304,11 +305,18 @@ namespace Xiropht_Miner
                         ClassMiningStats.CurrentRoundAesSize = int.Parse(jsonPacket[ClassMiningRequest.TypeJobMiningMethodAesSize].ToString());
                         ClassMiningStats.CurrentRoundAesKey = jsonPacket[ClassMiningRequest.TypeJobMiningMethodAesKey].ToString();
                         ClassMiningStats.CurrentRoundXorKey = int.Parse(jsonPacket[ClassMiningRequest.TypeJobMiningMethodXorKey].ToString());
+
+                        var totalShareToFound = ClassMiningStats.CurrentJobIndication.Length / ClassMiningStats.CurrentBlockIndication.Length;
+
                         if (jsonPacket.ContainsKey(ClassMiningRequest.TypeJobDifficulty))
                             ClassMiningStats.CurrentMiningDifficulty = decimal.Parse(jsonPacket[ClassMiningRequest.TypeJobDifficulty].ToString());
+
+                        ClassMining.SubmittedShares.Clear();
+
                         ClassMining.ProceedMining();
 
                         ClassConsole.ConsoleWriteLine("New Mining Job: " + ClassMiningStats.CurrentJobIndication + " | Job Difficulty: " + ClassMiningStats.CurrentMiningDifficulty + " | Block ID: " + ClassMiningStats.CurrentBlockId + " | Block Difficulty: " + ClassMiningStats.CurrentBlockDifficulty + " | Block Hash Indication: " + ClassMiningStats.CurrentBlockIndication, ClassConsoleEnumeration.IndexPoolConsoleMagentaLog);
+                        ClassConsole.ConsoleWriteLine("Total Share(s) to Found: " + totalShareToFound, ClassConsoleEnumeration.IndexPoolConsoleMagentaLog);
                         break;
                     case ClassMiningRequest.TypeShare:
                         LastPacketReceived = DateTimeOffset.Now.ToUnixTimeSeconds();

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
@@ -11,7 +12,10 @@ namespace Xiropht_Miner
 {
     public class ClassMining
     {
-        public static Dictionary<int, long> DictionaryMiningThread = new Dictionary<int, long>();
+        public static ConcurrentDictionary<int, long> DictionaryMiningThread { get; } = new ConcurrentDictionary<int, long>();
+
+        public static ConcurrentDictionary<string, int> SubmittedShares { get; } = new ConcurrentDictionary<string, int>();
+
         public static long TotalHashrate;
 
         private static Thread[] ThreadMiningArray;
@@ -23,7 +27,7 @@ namespace Xiropht_Miner
 
         private static bool ThreadMiningRunning;
         private static bool EstimatedCalculationSpeed;
-        private static bool JobCompleted;
+        private static bool JobCompleted => SubmittedShares.Count >= ClassMiningStats.CurrentJobIndication.Length / ClassMiningStats.CurrentBlockIndication.Length;
 
         private static int ThreadMiningAdditionIndexOffset;
         private static int ThreadMiningSubtractionIndexOffset;
@@ -77,7 +81,7 @@ namespace Xiropht_Miner
                 var i1 = i + 1;
 
                 if (!DictionaryMiningThread.ContainsKey(i))
-                    DictionaryMiningThread.Add(i, 0);
+                    DictionaryMiningThread[i] = 0;
 
                 ThreadMiningArray[i] = new Thread(async () => { await StartThreadMiningAsync(i1); });
                 AdjustThreadPriority(ThreadMiningArray[i]);
@@ -92,7 +96,7 @@ namespace Xiropht_Miner
                     var i1 = i + ThreadMiningAdditionIndexOffset + 1;
 
                     if (!DictionaryMiningThread.ContainsKey(i + ThreadMiningAdditionIndexOffset))
-                        DictionaryMiningThread.Add(i + ThreadMiningAdditionIndexOffset, 0);
+                        DictionaryMiningThread[i + ThreadMiningAdditionIndexOffset] = 0;
 
                     ThreadMiningAdditionArray[i] = new Thread(async () => { await StartThreadMiningAdditionJobAsync(i1); });
                     AdjustThreadPriority(ThreadMiningAdditionArray[i]);
@@ -105,7 +109,7 @@ namespace Xiropht_Miner
                     var i1 = i + ThreadMiningSubtractionIndexOffset + 1;
 
                     if (!DictionaryMiningThread.ContainsKey(i + ThreadMiningSubtractionIndexOffset))
-                        DictionaryMiningThread.Add(i + ThreadMiningSubtractionIndexOffset, 0);
+                        DictionaryMiningThread[i + ThreadMiningSubtractionIndexOffset] = 0;
 
                     ThreadMiningSubtractionArray[i] = new Thread(async () => { await StartThreadMiningSubtractionJobAsync(i1); });
                     AdjustThreadPriority(ThreadMiningSubtractionArray[i]);
@@ -118,7 +122,7 @@ namespace Xiropht_Miner
                     var i1 = i + ThreadMiningMultiplicationIndexOffset + 1;
 
                     if (!DictionaryMiningThread.ContainsKey(i + ThreadMiningMultiplicationIndexOffset))
-                        DictionaryMiningThread.Add(i + ThreadMiningMultiplicationIndexOffset, 0);
+                        DictionaryMiningThread[i + ThreadMiningMultiplicationIndexOffset] = 0;
 
                     ThreadMiningMultiplicationArray[i] = new Thread(async () => { await StartThreadMiningMultiplicationJobAsync(i1); });
                     AdjustThreadPriority(ThreadMiningMultiplicationArray[i]);
@@ -131,7 +135,7 @@ namespace Xiropht_Miner
                     var i1 = i + ThreadMiningDivisionIndexOffset + 1;
 
                     if (!DictionaryMiningThread.ContainsKey(i + ThreadMiningDivisionIndexOffset))
-                        DictionaryMiningThread.Add(i + ThreadMiningDivisionIndexOffset, 0);
+                        DictionaryMiningThread[i + ThreadMiningDivisionIndexOffset] = 0;
 
                     ThreadMiningDivisionArray[i] = new Thread(async () => { await StartThreadMiningDivisionJobAsync(i1); });
                     AdjustThreadPriority(ThreadMiningDivisionArray[i]);
@@ -144,7 +148,7 @@ namespace Xiropht_Miner
                     var i1 = i + ThreadMiningModulusIndexOffset + 1;
 
                     if (!DictionaryMiningThread.ContainsKey(i + ThreadMiningModulusIndexOffset))
-                        DictionaryMiningThread.Add(i + ThreadMiningModulusIndexOffset, 0);
+                        DictionaryMiningThread[i + ThreadMiningModulusIndexOffset] = 0;
 
                     ThreadMiningModulusArray[i] = new Thread(async () => { await StartThreadMiningModulusJobAsync(i1); });
                     AdjustThreadPriority(ThreadMiningModulusArray[i]);
@@ -281,7 +285,7 @@ namespace Xiropht_Miner
         {
             while (ClassMiningNetwork.IsLogged && ThreadMiningRunning)
             {
-                var (startRange, endRange) = ClassMiningUtilities.GetJob(ClassMiningStats.CurrentMaxRangeJob - ClassMiningStats.CurrentMinRangeJob + 1, ClassMiningConfig.MiningConfigAdditionJobThread, idThread - ThreadMiningAdditionIndexOffset - 1);
+                var (startRange, endRange) = ClassMiningUtilities.GetJob(ClassMiningStats.CurrentMiningDifficulty - 1, ClassMiningConfig.MiningConfigAdditionJobThread, idThread - ThreadMiningAdditionIndexOffset - 1);
 
                 var currentMiningJobIndication = ClassMiningStats.CurrentJobIndication;
                 ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Addition | Job Difficulty: {ClassMiningStats.CurrentMiningDifficulty} | Job Range: {startRange}-{endRange}", ClassConsoleEnumeration.IndexPoolConsoleBlueLog);
@@ -317,10 +321,16 @@ namespace Xiropht_Miner
 
                         var hashEncryptedShare = ClassUtility.GenerateSHA512(encryptedShare);
 
-                        if (hashEncryptedShare != ClassMiningStats.CurrentJobIndication && hashEncryptedShare != ClassMiningStats.CurrentBlockIndication)
+                        if (!ClassMiningStats.CurrentJobIndication.Contains(hashEncryptedShare) && hashEncryptedShare != ClassMiningStats.CurrentBlockIndication)
                             continue;
 
-                        if (hashEncryptedShare == ClassMiningStats.CurrentJobIndication)
+                        if (SubmittedShares.ContainsKey(calculation))
+                            continue;
+
+                        if (!SubmittedShares.TryAdd(calculation, 1))
+                            continue;
+
+                        if (ClassMiningStats.CurrentJobIndication.Contains(hashEncryptedShare))
                             ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Addition | Job found: {firstNumber} + {secondNumber} = {result}");
 
                         if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
@@ -337,27 +347,15 @@ namespace Xiropht_Miner
                             { ClassMiningRequest.SubmitHash, hashEncryptedShare }
                         };
 
-                        JobCompleted = await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
-
-                        if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
-                        {
-                            JobCompleted = false;
-                            continue;
-                        }
-
-                        break;
+                        await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
+                        await Task.Delay(1000).ConfigureAwait(false);
                     }
-
-                    if (JobCompleted)
-                        break;
                 }
 
                 await Task.Run(async () =>
                 {
                     while (currentMiningJobIndication == ClassMiningStats.CurrentJobIndication)
                         await Task.Delay(1000).ConfigureAwait(false);
-
-                    JobCompleted = false;
                 }).ConfigureAwait(false);
             }
         }
@@ -366,7 +364,7 @@ namespace Xiropht_Miner
         {
             while (ClassMiningNetwork.IsLogged && ThreadMiningRunning)
             {
-                var (startRange, endRange) = ClassMiningUtilities.GetJob(ClassMiningStats.CurrentMaxRangeJob - ClassMiningStats.CurrentMinRangeJob + 1, ClassMiningConfig.MiningConfigSubtractionJobThread, idThread - ThreadMiningSubtractionIndexOffset - 1);
+                var (startRange, endRange) = ClassMiningUtilities.GetJob(ClassMiningStats.CurrentMiningDifficulty - 1, ClassMiningConfig.MiningConfigSubtractionJobThread, idThread - ThreadMiningSubtractionIndexOffset - 1);
 
                 var currentMiningJobIndication = ClassMiningStats.CurrentJobIndication;
                 ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Subtraction | Job Difficulty: {ClassMiningStats.CurrentMiningDifficulty} | Job Range: {startRange}-{endRange}", ClassConsoleEnumeration.IndexPoolConsoleBlueLog);
@@ -402,10 +400,16 @@ namespace Xiropht_Miner
 
                         var hashEncryptedShare = ClassUtility.GenerateSHA512(encryptedShare);
 
-                        if (hashEncryptedShare != ClassMiningStats.CurrentJobIndication && hashEncryptedShare != ClassMiningStats.CurrentBlockIndication)
+                        if (!ClassMiningStats.CurrentJobIndication.Contains(hashEncryptedShare) && hashEncryptedShare != ClassMiningStats.CurrentBlockIndication)
                             continue;
 
-                        if (hashEncryptedShare == ClassMiningStats.CurrentJobIndication)
+                        if (SubmittedShares.ContainsKey(calculation))
+                            continue;
+
+                        if (!SubmittedShares.TryAdd(calculation, 1))
+                            continue;
+
+                        if (ClassMiningStats.CurrentJobIndication.Contains(hashEncryptedShare))
                             ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Subtraction | Job found: {firstNumber} - {secondNumber} = {result}");
 
                         if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
@@ -422,27 +426,15 @@ namespace Xiropht_Miner
                             { ClassMiningRequest.SubmitHash, hashEncryptedShare }
                         };
 
-                        JobCompleted = await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
-
-                        if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
-                        {
-                            JobCompleted = false;
-                            continue;
-                        }
-
-                        break;
+                        await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
+                        await Task.Delay(1000).ConfigureAwait(false);
                     }
-
-                    if (JobCompleted)
-                        break;
                 }
 
                 await Task.Run(async () =>
                 {
                     while (currentMiningJobIndication == ClassMiningStats.CurrentJobIndication)
                         await Task.Delay(1000).ConfigureAwait(false);
-
-                    JobCompleted = false;
                 }).ConfigureAwait(false);
             }
         }
@@ -451,7 +443,7 @@ namespace Xiropht_Miner
         {
             while (ClassMiningNetwork.IsLogged && ThreadMiningRunning)
             {
-                var (startRange, endRange) = ClassMiningUtilities.GetJob(ClassMiningStats.CurrentMaxRangeJob - ClassMiningStats.CurrentMinRangeJob + 1, ClassMiningConfig.MiningConfigMultiplicationJobThread, idThread - ThreadMiningMultiplicationIndexOffset - 1);
+                var (startRange, endRange) = ClassMiningUtilities.GetJob(ClassMiningStats.CurrentMiningDifficulty - 1, ClassMiningConfig.MiningConfigMultiplicationJobThread, idThread - ThreadMiningMultiplicationIndexOffset - 1);
 
                 var currentMiningJobIndication = ClassMiningStats.CurrentJobIndication;
                 ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Multiplication | Job Difficulty: {ClassMiningStats.CurrentMiningDifficulty} | Job Range: {startRange}-{endRange}", ClassConsoleEnumeration.IndexPoolConsoleBlueLog);
@@ -490,10 +482,16 @@ namespace Xiropht_Miner
 
                         var hashEncryptedShare = ClassUtility.GenerateSHA512(encryptedShare);
 
-                        if (hashEncryptedShare != ClassMiningStats.CurrentJobIndication && hashEncryptedShare != ClassMiningStats.CurrentBlockIndication)
+                        if (!ClassMiningStats.CurrentJobIndication.Contains(hashEncryptedShare) && hashEncryptedShare != ClassMiningStats.CurrentBlockIndication)
                             continue;
 
-                        if (hashEncryptedShare == ClassMiningStats.CurrentJobIndication)
+                        if (SubmittedShares.ContainsKey(calculation))
+                            continue;
+
+                        if (!SubmittedShares.TryAdd(calculation, 1))
+                            continue;
+
+                        if (ClassMiningStats.CurrentJobIndication.Contains(hashEncryptedShare))
                             ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Multiplication | Job found: {firstNumber} * {secondNumber} = {result}");
 
                         if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
@@ -510,27 +508,15 @@ namespace Xiropht_Miner
                             { ClassMiningRequest.SubmitHash, hashEncryptedShare }
                         };
 
-                        JobCompleted = await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
-
-                        if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
-                        {
-                            JobCompleted = false;
-                            continue;
-                        }
-
-                        break;
+                        await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
+                        await Task.Delay(1000).ConfigureAwait(false);
                     }
-
-                    if (JobCompleted)
-                        break;
                 }
 
                 await Task.Run(async () =>
                 {
                     while (currentMiningJobIndication == ClassMiningStats.CurrentJobIndication)
                         await Task.Delay(1000).ConfigureAwait(false);
-
-                    JobCompleted = false;
                 }).ConfigureAwait(false);
             }
         }
@@ -539,7 +525,7 @@ namespace Xiropht_Miner
         {
             while (ClassMiningNetwork.IsLogged && ThreadMiningRunning)
             {
-                var (startRange, endRange) = ClassMiningUtilities.GetJob(ClassMiningStats.CurrentMaxRangeJob - ClassMiningStats.CurrentMinRangeJob + 1, ClassMiningConfig.MiningConfigDivisionJobThread, idThread - ThreadMiningDivisionIndexOffset - 1);
+                var (startRange, endRange) = ClassMiningUtilities.GetJob(ClassMiningStats.CurrentMiningDifficulty - 1, ClassMiningConfig.MiningConfigDivisionJobThread, idThread - ThreadMiningDivisionIndexOffset - 1);
 
                 var currentMiningJobIndication = ClassMiningStats.CurrentJobIndication;
                 ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Division | Job Difficulty: {ClassMiningStats.CurrentMiningDifficulty} | Job Range: {startRange}-{endRange}", ClassConsoleEnumeration.IndexPoolConsoleBlueLog);
@@ -578,10 +564,16 @@ namespace Xiropht_Miner
 
                         var hashEncryptedShare = ClassUtility.GenerateSHA512(encryptedShare);
 
-                        if (hashEncryptedShare != ClassMiningStats.CurrentJobIndication && hashEncryptedShare != ClassMiningStats.CurrentBlockIndication)
+                        if (!ClassMiningStats.CurrentJobIndication.Contains(hashEncryptedShare) && hashEncryptedShare != ClassMiningStats.CurrentBlockIndication)
                             continue;
 
-                        if (hashEncryptedShare == ClassMiningStats.CurrentJobIndication)
+                        if (SubmittedShares.ContainsKey(calculation))
+                            continue;
+
+                        if (!SubmittedShares.TryAdd(calculation, 1))
+                            continue;
+
+                        if (ClassMiningStats.CurrentJobIndication.Contains(hashEncryptedShare))
                             ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Division | Job found: {firstNumber} / {secondNumber} = {ClassMiningStats.CurrentMiningDifficulty}");
 
                         if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
@@ -598,27 +590,15 @@ namespace Xiropht_Miner
                             { ClassMiningRequest.SubmitHash, hashEncryptedShare }
                         };
 
-                        JobCompleted = await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
-
-                        if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
-                        {
-                            JobCompleted = false;
-                            continue;
-                        }
-
-                        break;
+                        await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
+                        await Task.Delay(1000).ConfigureAwait(false);
                     }
-
-                    if (JobCompleted)
-                        break;
                 }
 
                 await Task.Run(async () =>
                 {
                     while (currentMiningJobIndication == ClassMiningStats.CurrentJobIndication)
                         await Task.Delay(1000).ConfigureAwait(false);
-
-                    JobCompleted = false;
                 }).ConfigureAwait(false);
             }
         }
@@ -627,7 +607,7 @@ namespace Xiropht_Miner
         {
             while (ClassMiningNetwork.IsLogged && ThreadMiningRunning)
             {
-                var (startRange, endRange) = ClassMiningUtilities.GetJob(ClassMiningStats.CurrentMaxRangeJob - ClassMiningStats.CurrentMinRangeJob + 1, ClassMiningConfig.MiningConfigModulusJobThread, idThread - ThreadMiningModulusIndexOffset - 1);
+                var (startRange, endRange) = ClassMiningUtilities.GetJob(ClassMiningStats.CurrentMiningDifficulty - 1, ClassMiningConfig.MiningConfigModulusJobThread, idThread - ThreadMiningModulusIndexOffset - 1);
 
                 var currentMiningJobIndication = ClassMiningStats.CurrentJobIndication;
                 ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Modulus | Job Difficulty: {ClassMiningStats.CurrentMiningDifficulty} | Job Range: {startRange}-{endRange}", ClassConsoleEnumeration.IndexPoolConsoleBlueLog);
@@ -657,10 +637,16 @@ namespace Xiropht_Miner
 
                         var hashEncryptedShare = ClassUtility.GenerateSHA512(encryptedShare);
 
-                        if (hashEncryptedShare != ClassMiningStats.CurrentJobIndication && hashEncryptedShare != ClassMiningStats.CurrentBlockIndication)
+                        if (!ClassMiningStats.CurrentJobIndication.Contains(hashEncryptedShare) && hashEncryptedShare != ClassMiningStats.CurrentBlockIndication)
                             continue;
 
-                        if (hashEncryptedShare == ClassMiningStats.CurrentJobIndication)
+                        if (SubmittedShares.ContainsKey(calculation))
+                            continue;
+
+                        if (!SubmittedShares.TryAdd(calculation, 1))
+                            continue;
+
+                        if (ClassMiningStats.CurrentJobIndication.Contains(hashEncryptedShare))
                             ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Modulus | Job found: {firstNumber} % {secondNumber} = {firstNumber}");
 
                         if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
@@ -677,27 +663,15 @@ namespace Xiropht_Miner
                             { ClassMiningRequest.SubmitHash, hashEncryptedShare }
                         };
 
-                        JobCompleted = await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
-
-                        if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
-                        {
-                            JobCompleted = false;
-                            continue;
-                        }
-
-                        break;
+                        await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
+                        await Task.Delay(1000).ConfigureAwait(false);
                     }
-
-                    if (JobCompleted)
-                        break;
                 }
 
                 await Task.Run(async () =>
                 {
                     while (currentMiningJobIndication == ClassMiningStats.CurrentJobIndication)
                         await Task.Delay(1000).ConfigureAwait(false);
-
-                    JobCompleted = false;
                 }).ConfigureAwait(false);
             }
         }
@@ -734,7 +708,7 @@ namespace Xiropht_Miner
                     var calculation = firstNumber + " " + ClassUtility.RandomOperatorCalculation[i] + " " + secondNumber;
                     var calculationResult = ClassUtility.ComputeCalculation(firstNumber, ClassUtility.RandomOperatorCalculation[i], secondNumber);
 
-                    if (calculationResult >= ClassMiningStats.CurrentMinRangeJob && calculationResult <= ClassMiningStats.CurrentMaxRangeJob)
+                    if (calculationResult >= ClassMiningStats.CurrentMinRangeJob && calculationResult <= ClassMiningStats.CurrentBlockDifficulty)
                     {
                         if (calculationResult - Math.Round(calculationResult, 0) == 0) // Check if the result contain decimal places, if yes ignore it. 
                         {
@@ -745,9 +719,15 @@ namespace Xiropht_Miner
                                 // Generate SHA512 hash for block hash indication.
                                 var hashEncryptedShare = ClassUtility.GenerateSHA512(encryptedShare);
 
-                                if (hashEncryptedShare == ClassMiningStats.CurrentJobIndication || hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
+                                if (ClassMiningStats.CurrentJobIndication.Contains(hashEncryptedShare) || hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
                                 {
-                                    if (hashEncryptedShare == ClassMiningStats.CurrentJobIndication)
+                                    if (SubmittedShares.ContainsKey(calculation))
+                                        continue;
+
+                                    if (!SubmittedShares.TryAdd(calculation, 1))
+                                        continue;
+
+                                    if (ClassMiningStats.CurrentJobIndication.Contains(hashEncryptedShare))
                                         ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Any | Job found: {firstNumber} {ClassUtility.RandomOperatorCalculation[i]} {secondNumber} = {calculationResult}");
 
                                     if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
@@ -764,10 +744,8 @@ namespace Xiropht_Miner
                                         { ClassMiningRequest.SubmitHash, hashEncryptedShare }
                                     };
 
-                                    JobCompleted = await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
-
-                                    if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
-                                        JobCompleted = false;
+                                    await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
+                                    await Task.Delay(1000).ConfigureAwait(false);
                                 }
                             }
                         }
@@ -778,7 +756,7 @@ namespace Xiropht_Miner
 
                             if (calculationResult - Math.Round(calculationResult, 0) == 0) // Check if the result contain decimal places, if yes ignore it. 
                             {
-                                if (calculationResult >= ClassMiningStats.CurrentMinRangeJob && calculationResult <= ClassMiningStats.CurrentMaxRangeJob)
+                                if (calculationResult >= ClassMiningStats.CurrentMinRangeJob && calculationResult <= ClassMiningStats.CurrentBlockDifficulty)
                                 {
                                     var encryptedShare = MakeEncryptedShare(calculation, idThread - 1);
 
@@ -787,9 +765,15 @@ namespace Xiropht_Miner
                                         // Generate SHA512 hash for block hash indication.
                                         var hashEncryptedShare = ClassUtility.GenerateSHA512(encryptedShare);
 
-                                        if (hashEncryptedShare == ClassMiningStats.CurrentJobIndication || hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
+                                        if (ClassMiningStats.CurrentJobIndication.Contains(hashEncryptedShare) || hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
                                         {
-                                            if (hashEncryptedShare == ClassMiningStats.CurrentJobIndication)
+                                            if (SubmittedShares.ContainsKey(calculation))
+                                                continue;
+
+                                            if (!SubmittedShares.TryAdd(calculation, 1))
+                                                continue;
+
+                                            if (ClassMiningStats.CurrentJobIndication.Contains(hashEncryptedShare))
                                                 ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Any | Job found: {secondNumber} {ClassUtility.RandomOperatorCalculation[i]} {firstNumber} = {calculationResult}");
 
                                             if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
@@ -806,10 +790,8 @@ namespace Xiropht_Miner
                                                 { ClassMiningRequest.SubmitHash, hashEncryptedShare }
                                             };
 
-                                            JobCompleted = await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
-
-                                            if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
-                                                JobCompleted = false;
+                                            await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
+                                            await Task.Delay(1000).ConfigureAwait(false);
                                         }
                                     }
                                 }
@@ -823,7 +805,7 @@ namespace Xiropht_Miner
 
                         if (calculationResult - Math.Round(calculationResult, 0) == 0) // Check if the result contain decimal places, if yes ignore it. 
                         {
-                            if (calculationResult >= ClassMiningStats.CurrentMinRangeJob && calculationResult <= ClassMiningStats.CurrentMaxRangeJob)
+                            if (calculationResult >= ClassMiningStats.CurrentMinRangeJob && calculationResult <= ClassMiningStats.CurrentBlockDifficulty)
                             {
                                 var encryptedShare = MakeEncryptedShare(calculation, idThread - 1);
 
@@ -832,9 +814,15 @@ namespace Xiropht_Miner
                                     // Generate SHA512 hash for block hash indication.
                                     var hashEncryptedShare = ClassUtility.GenerateSHA512(encryptedShare);
 
-                                    if (hashEncryptedShare == ClassMiningStats.CurrentJobIndication || hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
+                                    if (ClassMiningStats.CurrentJobIndication.Contains(hashEncryptedShare) || hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
                                     {
-                                        if (hashEncryptedShare == ClassMiningStats.CurrentJobIndication)
+                                        if (SubmittedShares.ContainsKey(calculation))
+                                            continue;
+
+                                        if (!SubmittedShares.TryAdd(calculation, 1))
+                                            continue;
+
+                                        if (ClassMiningStats.CurrentJobIndication.Contains(hashEncryptedShare))
                                             ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Any | Job found: {secondNumber} {ClassUtility.RandomOperatorCalculation[i]} {firstNumber} = {calculationResult}");
 
                                         if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
@@ -851,10 +839,8 @@ namespace Xiropht_Miner
                                             { ClassMiningRequest.SubmitHash, hashEncryptedShare }
                                         };
 
-                                        JobCompleted = await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
-
-                                        if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
-                                            JobCompleted = false;
+                                        await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
+                                        await Task.Delay(1000).ConfigureAwait(false);
                                     }
                                 }
                             }
@@ -874,8 +860,6 @@ namespace Xiropht_Miner
                 {
                     while (indication == ClassMiningStats.CurrentJobIndication)
                         await Task.Delay(1000).ConfigureAwait(false);
-
-                    JobCompleted = false;
                 }).ConfigureAwait(false);
             }
 

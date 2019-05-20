@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 
 namespace Xiropht_Miner
 {
@@ -14,6 +15,8 @@ namespace Xiropht_Miner
 
     public class ClassConsole
     {
+        private static SemaphoreSlim ConsoleSemaphoreSlim { get; } = new SemaphoreSlim(1, 1);
+
         /// <summary>
         /// Log on the console.
         /// </summary>
@@ -23,34 +26,47 @@ namespace Xiropht_Miner
         /// <param name="writeLog"></param>
         public static void ConsoleWriteLine(string text, int colorId = 0)
         {
-            switch (colorId)
+            try
             {
-                case ClassConsoleEnumeration.IndexPoolConsoleGreenLog:
-                    Console.ForegroundColor = ConsoleColor.Green;
-                    break;
+                ConsoleSemaphoreSlim.Wait();
 
-                case ClassConsoleEnumeration.IndexPoolConsoleYellowLog:
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    break;
+                switch (colorId)
+                {
+                    case ClassConsoleEnumeration.IndexPoolConsoleGreenLog:
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        break;
 
-                case ClassConsoleEnumeration.IndexPoolConsoleRedLog:
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    break;
+                    case ClassConsoleEnumeration.IndexPoolConsoleYellowLog:
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        break;
 
-                case ClassConsoleEnumeration.IndexPoolConsoleBlueLog:
-                    Console.ForegroundColor = ConsoleColor.Blue;
-                    break;
+                    case ClassConsoleEnumeration.IndexPoolConsoleRedLog:
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        break;
 
-                case ClassConsoleEnumeration.IndexPoolConsoleMagentaLog:
-                    Console.ForegroundColor = ConsoleColor.Magenta;
-                    break;
+                    case ClassConsoleEnumeration.IndexPoolConsoleBlueLog:
+                        Console.ForegroundColor = ConsoleColor.Blue;
+                        break;
 
-                default:
-                    Console.ForegroundColor = ConsoleColor.White;
-                    break;
+                    case ClassConsoleEnumeration.IndexPoolConsoleMagentaLog:
+                        Console.ForegroundColor = ConsoleColor.Magenta;
+                        break;
+
+                    default:
+                        Console.ForegroundColor = ConsoleColor.White;
+                        break;
+                }
+
+                Console.WriteLine(DateTime.Now + " - " + text);
             }
-
-            Console.WriteLine(DateTime.Now + " - " + text);
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+            finally
+            {
+                ConsoleSemaphoreSlim.Release();
+            }
         }
     }
 }
