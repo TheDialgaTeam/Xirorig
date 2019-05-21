@@ -10,151 +10,62 @@ using Xiropht_Connector_All.Utils;
 
 namespace Xiropht_Miner
 {
+    
+
     public class ClassMining
     {
+        public static long TotalHashrate;
+
+        private static bool ThreadMiningRunning;
+
+        private static bool EstimatedCalculationSpeed;
+
         public static ConcurrentDictionary<int, long> DictionaryMiningThread { get; } = new ConcurrentDictionary<int, long>();
 
         public static ConcurrentDictionary<string, int> SubmittedShares { get; } = new ConcurrentDictionary<string, int>();
 
-        public static long TotalHashrate;
+        private static Thread[] RandomJobThread { get; set; }
 
-        private static Thread[] ThreadMiningArray;
-        private static Thread[] ThreadMiningAdditionArray;
-        private static Thread[] ThreadMiningSubtractionArray;
-        private static Thread[] ThreadMiningMultiplicationArray;
-        private static Thread[] ThreadMiningDivisionArray;
-        private static Thread[] ThreadMiningModulusArray;
+        private static Thread[] AdditionJobThread { get; set; }
 
-        private static bool ThreadMiningRunning;
-        private static bool EstimatedCalculationSpeed;
-        private static bool JobCompleted => SubmittedShares.Count >= ClassMiningStats.CurrentJobIndication.Length / ClassMiningStats.CurrentBlockIndication.Length;
+        private static Thread[] SubtractionJobThread { get; set; }
 
-        private static int ThreadMiningAdditionIndexOffset;
-        private static int ThreadMiningSubtractionIndexOffset;
-        private static int ThreadMiningMultiplicationIndexOffset;
-        private static int ThreadMiningDivisionIndexOffset;
-        private static int ThreadMiningModulusIndexOffset;
+        private static Thread[] MultiplicationJobThread { get; set; }
+
+        private static Thread[] DivisionJobThread { get; set; }
+
+        private static Thread[] ModulusJobThread { get; set; }
+
+        private static int AdditionJobIndexOffset { get; set; }
+
+        private static int SubtractionJobIndexOffset { get; set; }
+
+        private static int MultiplicationJobIndexOffset { get; set; }
+
+        private static int DivisionJobIndexOffset { get; set; }
+
+        private static int ModulusJobIndexOffset { get; set; }
 
         /// <summary>
         /// Proceed mining
         /// </summary>
-        public static void ProceedMining()
+        public static void StartMining()
         {
-            void AdjustThreadPriority(Thread thread)
-            {
-                switch (ClassMiningConfig.MiningConfigThreadIntensity)
-                {
-                    case 0:
-                        thread.Priority = ThreadPriority.Lowest;
-                        break;
-
-                    case 1:
-                        thread.Priority = ThreadPriority.BelowNormal;
-                        break;
-
-                    case 2:
-                        thread.Priority = ThreadPriority.Normal;
-                        break;
-
-                    case 3:
-                        thread.Priority = ThreadPriority.AboveNormal;
-                        break;
-
-                    case 4:
-                        thread.Priority = ThreadPriority.Highest;
-                        break;
-
-                    default:
-                        thread.Priority = ThreadPriority.Normal;
-                        break;
-                }
-            }
-
             if (ThreadMiningRunning)
                 return;
 
-            StopThreadMining();
+            StopMining();
             ThreadMiningRunning = true;
 
-            for (var i = 0; i < ThreadMiningArray.Length; i++)
-            {
-                var i1 = i + 1;
-
-                if (!DictionaryMiningThread.ContainsKey(i))
-                    DictionaryMiningThread[i] = 0;
-
-                ThreadMiningArray[i] = new Thread(async () => { await StartThreadMiningAsync(i1); });
-                AdjustThreadPriority(ThreadMiningArray[i]);
-                ThreadMiningArray[i].IsBackground = true;
-                ThreadMiningArray[i].Start();
-            }
+            StartMiningJob(RandomJobThread, 0, async i => await StartRandomJobAsync(i).ConfigureAwait(false));
 
             if (ClassMiningConfig.MiningConfigUseIntelligentCalculation)
             {
-                for (var i = 0; i < ThreadMiningAdditionArray.Length; i++)
-                {
-                    var i1 = i + ThreadMiningAdditionIndexOffset + 1;
-
-                    if (!DictionaryMiningThread.ContainsKey(i + ThreadMiningAdditionIndexOffset))
-                        DictionaryMiningThread[i + ThreadMiningAdditionIndexOffset] = 0;
-
-                    ThreadMiningAdditionArray[i] = new Thread(async () => { await StartThreadMiningAdditionJobAsync(i1); });
-                    AdjustThreadPriority(ThreadMiningAdditionArray[i]);
-                    ThreadMiningAdditionArray[i].IsBackground = true;
-                    ThreadMiningAdditionArray[i].Start();
-                }
-
-                for (var i = 0; i < ThreadMiningSubtractionArray.Length; i++)
-                {
-                    var i1 = i + ThreadMiningSubtractionIndexOffset + 1;
-
-                    if (!DictionaryMiningThread.ContainsKey(i + ThreadMiningSubtractionIndexOffset))
-                        DictionaryMiningThread[i + ThreadMiningSubtractionIndexOffset] = 0;
-
-                    ThreadMiningSubtractionArray[i] = new Thread(async () => { await StartThreadMiningSubtractionJobAsync(i1); });
-                    AdjustThreadPriority(ThreadMiningSubtractionArray[i]);
-                    ThreadMiningSubtractionArray[i].IsBackground = true;
-                    ThreadMiningSubtractionArray[i].Start();
-                }
-
-                for (var i = 0; i < ThreadMiningMultiplicationArray.Length; i++)
-                {
-                    var i1 = i + ThreadMiningMultiplicationIndexOffset + 1;
-
-                    if (!DictionaryMiningThread.ContainsKey(i + ThreadMiningMultiplicationIndexOffset))
-                        DictionaryMiningThread[i + ThreadMiningMultiplicationIndexOffset] = 0;
-
-                    ThreadMiningMultiplicationArray[i] = new Thread(async () => { await StartThreadMiningMultiplicationJobAsync(i1); });
-                    AdjustThreadPriority(ThreadMiningMultiplicationArray[i]);
-                    ThreadMiningMultiplicationArray[i].IsBackground = true;
-                    ThreadMiningMultiplicationArray[i].Start();
-                }
-
-                for (var i = 0; i < ThreadMiningDivisionArray.Length; i++)
-                {
-                    var i1 = i + ThreadMiningDivisionIndexOffset + 1;
-
-                    if (!DictionaryMiningThread.ContainsKey(i + ThreadMiningDivisionIndexOffset))
-                        DictionaryMiningThread[i + ThreadMiningDivisionIndexOffset] = 0;
-
-                    ThreadMiningDivisionArray[i] = new Thread(async () => { await StartThreadMiningDivisionJobAsync(i1); });
-                    AdjustThreadPriority(ThreadMiningDivisionArray[i]);
-                    ThreadMiningDivisionArray[i].IsBackground = true;
-                    ThreadMiningDivisionArray[i].Start();
-                }
-
-                for (var i = 0; i < ThreadMiningModulusArray.Length; i++)
-                {
-                    var i1 = i + ThreadMiningModulusIndexOffset + 1;
-
-                    if (!DictionaryMiningThread.ContainsKey(i + ThreadMiningModulusIndexOffset))
-                        DictionaryMiningThread[i + ThreadMiningModulusIndexOffset] = 0;
-
-                    ThreadMiningModulusArray[i] = new Thread(async () => { await StartThreadMiningModulusJobAsync(i1); });
-                    AdjustThreadPriority(ThreadMiningModulusArray[i]);
-                    ThreadMiningModulusArray[i].IsBackground = true;
-                    ThreadMiningModulusArray[i].Start();
-                }
+                StartMiningJob(AdditionJobThread, AdditionJobIndexOffset, async i => await StartAdditionJobAsync(i).ConfigureAwait(false));
+                StartMiningJob(SubtractionJobThread, SubtractionJobIndexOffset, async i => await StartSubtractionJobAsync(i).ConfigureAwait(false));
+                StartMiningJob(MultiplicationJobThread, MultiplicationJobIndexOffset, async i => await StartMultiplicationJobAsync(i).ConfigureAwait(false));
+                StartMiningJob(DivisionJobThread, DivisionJobIndexOffset, async i => await StartDivisionJobAsync(i).ConfigureAwait(false));
+                StartMiningJob(ModulusJobThread, ModulusJobIndexOffset, async i => await StartModulusJobAsync(i).ConfigureAwait(false));
             }
 
             if (EstimatedCalculationSpeed)
@@ -162,6 +73,49 @@ namespace Xiropht_Miner
 
             EstimatedCalculationSpeed = true;
             CalculateCalculationSpeed();
+        }
+
+        private static void StartMiningJob(IList<Thread> jobThreads, int offset, Func<int, Task> function)
+        {
+            for (var i = 0; i < jobThreads.Count; i++)
+            {
+                var iOffset = i + 1 + offset;
+
+                if (!DictionaryMiningThread.ContainsKey(i + offset))
+                    DictionaryMiningThread[i + offset] = 0;
+
+                jobThreads[i] = new Thread(async () => await function(iOffset).ConfigureAwait(false));
+
+                switch (ClassMiningConfig.MiningConfigThreadIntensity)
+                {
+                    case 0:
+                        jobThreads[i].Priority = ThreadPriority.Lowest;
+                        break;
+
+                    case 1:
+                        jobThreads[i].Priority = ThreadPriority.BelowNormal;
+                        break;
+
+                    case 2:
+                        jobThreads[i].Priority = ThreadPriority.Normal;
+                        break;
+
+                    case 3:
+                        jobThreads[i].Priority = ThreadPriority.AboveNormal;
+                        break;
+
+                    case 4:
+                        jobThreads[i].Priority = ThreadPriority.Highest;
+                        break;
+
+                    default:
+                        jobThreads[i].Priority = ThreadPriority.Normal;
+                        break;
+                }
+
+                jobThreads[i].IsBackground = true;
+                jobThreads[i].Start();
+            }
         }
 
         /// <summary>
@@ -190,112 +144,70 @@ namespace Xiropht_Miner
         /// <summary>
         /// Stop thread(s) on mining.
         /// </summary>
-        private static void StopThreadMining()
+        private static void StopMining()
         {
-            if (ThreadMiningArray == null)
+            if (RandomJobThread == null)
             {
-                ThreadMiningArray = new Thread[ClassMiningConfig.MiningConfigThread];
+                RandomJobThread = new Thread[ClassMiningConfig.MiningConfigThread];
 
                 if (!ClassMiningConfig.MiningConfigUseIntelligentCalculation)
                     return;
 
-                ThreadMiningAdditionIndexOffset = ThreadMiningArray.Length;
-                ThreadMiningAdditionArray = new Thread[ClassMiningConfig.MiningConfigAdditionJobThread];
+                AdditionJobIndexOffset = RandomJobThread.Length;
+                AdditionJobThread = new Thread[ClassMiningConfig.MiningConfigAdditionJobThread];
 
-                ThreadMiningSubtractionIndexOffset = ThreadMiningAdditionIndexOffset + ThreadMiningAdditionArray.Length;
-                ThreadMiningSubtractionArray = new Thread[ClassMiningConfig.MiningConfigSubtractionJobThread];
+                SubtractionJobIndexOffset = AdditionJobIndexOffset + AdditionJobThread.Length;
+                SubtractionJobThread = new Thread[ClassMiningConfig.MiningConfigSubtractionJobThread];
 
-                ThreadMiningMultiplicationIndexOffset = ThreadMiningSubtractionIndexOffset + ThreadMiningSubtractionArray.Length;
-                ThreadMiningMultiplicationArray = new Thread[ClassMiningConfig.MiningConfigMultiplicationJobThread];
+                MultiplicationJobIndexOffset = SubtractionJobIndexOffset + SubtractionJobThread.Length;
+                MultiplicationJobThread = new Thread[ClassMiningConfig.MiningConfigMultiplicationJobThread];
 
-                ThreadMiningDivisionIndexOffset = ThreadMiningMultiplicationIndexOffset + ThreadMiningMultiplicationArray.Length;
-                ThreadMiningDivisionArray = new Thread[ClassMiningConfig.MiningConfigDivisionJobThread];
+                DivisionJobIndexOffset = MultiplicationJobIndexOffset + MultiplicationJobThread.Length;
+                DivisionJobThread = new Thread[ClassMiningConfig.MiningConfigDivisionJobThread];
 
-                ThreadMiningModulusIndexOffset = ThreadMiningDivisionIndexOffset + ThreadMiningDivisionArray.Length;
-                ThreadMiningModulusArray = new Thread[ClassMiningConfig.MiningConfigModulusJobThread];
+                ModulusJobIndexOffset = DivisionJobIndexOffset + DivisionJobThread.Length;
+                ModulusJobThread = new Thread[ClassMiningConfig.MiningConfigModulusJobThread];
             }
             else
             {
-                for (var i = 0; i < ThreadMiningArray.Length; i++)
-                {
-                    if (ThreadMiningArray[i] == null || !ThreadMiningArray[i].IsAlive && ThreadMiningArray[i] == null)
-                        continue;
-
-                    DictionaryMiningThread[i] = 0;
-                    ThreadMiningArray[i].Abort();
-                    GC.SuppressFinalize(ThreadMiningArray[i]);
-                }
+                StopMiningJob(RandomJobThread, 0);
 
                 if (!ClassMiningConfig.MiningConfigUseIntelligentCalculation)
                     return;
 
-                for (var i = 0; i < ThreadMiningAdditionArray.Length; i++)
-                {
-                    if (ThreadMiningAdditionArray[i] == null || !ThreadMiningAdditionArray[i].IsAlive && ThreadMiningAdditionArray[i] == null)
-                        continue;
-
-                    DictionaryMiningThread[i + ThreadMiningAdditionIndexOffset] = 0;
-                    ThreadMiningAdditionArray[i].Abort();
-                    GC.SuppressFinalize(ThreadMiningAdditionArray[i]);
-                }
-
-                for (var i = 0; i < ThreadMiningSubtractionArray.Length; i++)
-                {
-                    if (ThreadMiningSubtractionArray[i] == null || !ThreadMiningSubtractionArray[i].IsAlive && ThreadMiningSubtractionArray[i] == null)
-                        continue;
-
-                    DictionaryMiningThread[i + ThreadMiningSubtractionIndexOffset] = 0;
-                    ThreadMiningSubtractionArray[i].Abort();
-                    GC.SuppressFinalize(ThreadMiningSubtractionArray[i]);
-                }
-
-                for (var i = 0; i < ThreadMiningMultiplicationArray.Length; i++)
-                {
-                    if (ThreadMiningMultiplicationArray[i] == null || !ThreadMiningMultiplicationArray[i].IsAlive && ThreadMiningMultiplicationArray[i] == null)
-                        continue;
-
-                    DictionaryMiningThread[i + ThreadMiningMultiplicationIndexOffset] = 0;
-                    ThreadMiningMultiplicationArray[i].Abort();
-                    GC.SuppressFinalize(ThreadMiningMultiplicationArray[i]);
-                }
-
-                for (var i = 0; i < ThreadMiningDivisionArray.Length; i++)
-                {
-                    if (ThreadMiningDivisionArray[i] == null || !ThreadMiningDivisionArray[i].IsAlive && ThreadMiningDivisionArray[i] == null)
-                        continue;
-
-                    DictionaryMiningThread[i + ThreadMiningDivisionIndexOffset] = 0;
-                    ThreadMiningDivisionArray[i].Abort();
-                    GC.SuppressFinalize(ThreadMiningDivisionArray[i]);
-                }
-
-                for (var i = 0; i < ThreadMiningModulusArray.Length; i++)
-                {
-                    if (ThreadMiningModulusArray[i] == null || !ThreadMiningModulusArray[i].IsAlive && ThreadMiningModulusArray[i] == null)
-                        continue;
-
-                    DictionaryMiningThread[i + ThreadMiningModulusIndexOffset] = 0;
-                    ThreadMiningModulusArray[i].Abort();
-                    GC.SuppressFinalize(ThreadMiningModulusArray[i]);
-                }
+                StopMiningJob(AdditionJobThread, AdditionJobIndexOffset);
+                StopMiningJob(SubtractionJobThread, SubtractionJobIndexOffset);
+                StopMiningJob(MultiplicationJobThread, MultiplicationJobIndexOffset);
+                StopMiningJob(DivisionJobThread, DivisionJobIndexOffset);
+                StopMiningJob(ModulusJobThread, ModulusJobIndexOffset);
             }
         }
 
-        private static async Task StartThreadMiningAdditionJobAsync(int idThread)
+        private static void StopMiningJob(IReadOnlyList<Thread> jobThreads, int offset)
+        {
+            for (var i = 0; i < jobThreads.Count; i++)
+            {
+                if (jobThreads[i] == null || !jobThreads[i].IsAlive)
+                    continue;
+
+                DictionaryMiningThread[i + offset] = 0;
+                jobThreads[i].Abort();
+                GC.SuppressFinalize(jobThreads[i]);
+            }
+        }
+
+        private static async Task StartAdditionJobAsync(int threadId)
         {
             while (ClassMiningNetwork.IsLogged && ThreadMiningRunning)
             {
-                var (startRange, endRange) = ClassMiningUtilities.GetJob(ClassMiningStats.CurrentMiningDifficulty - 1, ClassMiningConfig.MiningConfigAdditionJobThread, idThread - ThreadMiningAdditionIndexOffset - 1);
+                var (startRange, endRange) = ClassMiningUtilities.GetJob(ClassMiningStats.CurrentBlockDifficulty - 3, ClassMiningConfig.MiningConfigAdditionJobThread, threadId - AdditionJobIndexOffset - 1, 4);
 
                 var currentMiningJobIndication = ClassMiningStats.CurrentJobIndication;
-                ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Addition | Job Difficulty: {ClassMiningStats.CurrentMiningDifficulty} | Job Range: {startRange}-{endRange}", ClassConsoleEnumeration.IndexPoolConsoleBlueLog);
+                ClassConsole.ConsoleWriteLine($"Thread: {threadId} | Job Type: Addition | Job Difficulty: {ClassMiningStats.CurrentMiningDifficulty} | Job Range: {startRange}-{endRange}", ClassConsoleEnumeration.IndexPoolConsoleBlueLog);
 
                 for (var result = startRange; result <= endRange; result++)
                 {
                     if (currentMiningJobIndication != ClassMiningStats.CurrentJobIndication)
-                        break;
-
-                    if (JobCompleted)
                         break;
 
                     foreach (var (firstNumber, secondNumber) in ClassMiningUtilities.SumOf(result))
@@ -303,78 +215,51 @@ namespace Xiropht_Miner
                         if (currentMiningJobIndication != ClassMiningStats.CurrentJobIndication)
                             break;
 
-                        if (JobCompleted)
-                            break;
-
                         if (firstNumber < ClassMiningStats.CurrentMinRangeJob || firstNumber > ClassMiningStats.CurrentMaxRangeJob)
                             continue;
 
                         if (secondNumber < ClassMiningStats.CurrentMinRangeJob || secondNumber > ClassMiningStats.CurrentMaxRangeJob)
                             continue;
 
-                        var calculation = $"{firstNumber} + {secondNumber}";
-
-                        var encryptedShare = MakeEncryptedShare(calculation, idThread - 1);
-
-                        if (encryptedShare == ClassAlgoErrorEnumeration.AlgoError)
-                            continue;
-
-                        var hashEncryptedShare = ClassUtility.GenerateSHA512(encryptedShare);
-
-                        if (!ClassMiningStats.CurrentJobIndication.Contains(hashEncryptedShare) && hashEncryptedShare != ClassMiningStats.CurrentBlockIndication)
-                            continue;
-
-                        if (SubmittedShares.ContainsKey(calculation))
-                            continue;
-
-                        if (!SubmittedShares.TryAdd(calculation, 1))
-                            continue;
-
-                        if (ClassMiningStats.CurrentJobIndication.Contains(hashEncryptedShare))
-                            ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Addition | Job found: {firstNumber} + {secondNumber} = {result}");
-
-                        if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
-                            ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Addition | Block found: {firstNumber} + {secondNumber} = {result}");
-
-                        var share = new JObject
-                        {
-                            { "type", ClassMiningRequest.TypeSubmit },
-                            { ClassMiningRequest.SubmitResult, result },
-                            { ClassMiningRequest.SubmitFirstNumber, firstNumber },
-                            { ClassMiningRequest.SubmitSecondNumber, secondNumber },
-                            { ClassMiningRequest.SubmitOperator, "+" },
-                            { ClassMiningRequest.SubmitShare, encryptedShare },
-                            { ClassMiningRequest.SubmitHash, hashEncryptedShare }
-                        };
-
-                        await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
-                        await Task.Delay(1000).ConfigureAwait(false);
+                        await DoCalculationAsync(firstNumber, secondNumber, "+", "Addition", threadId - 1).ConfigureAwait(false);
                     }
                 }
-
-                await Task.Run(async () =>
-                {
-                    while (currentMiningJobIndication == ClassMiningStats.CurrentJobIndication)
-                        await Task.Delay(1000).ConfigureAwait(false);
-                }).ConfigureAwait(false);
-            }
-        }
-
-        private static async Task StartThreadMiningSubtractionJobAsync(int idThread)
-        {
-            while (ClassMiningNetwork.IsLogged && ThreadMiningRunning)
-            {
-                var (startRange, endRange) = ClassMiningUtilities.GetJob(ClassMiningStats.CurrentMiningDifficulty - 1, ClassMiningConfig.MiningConfigSubtractionJobThread, idThread - ThreadMiningSubtractionIndexOffset - 1);
-
-                var currentMiningJobIndication = ClassMiningStats.CurrentJobIndication;
-                ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Subtraction | Job Difficulty: {ClassMiningStats.CurrentMiningDifficulty} | Job Range: {startRange}-{endRange}", ClassConsoleEnumeration.IndexPoolConsoleBlueLog);
 
                 for (var result = startRange; result <= endRange; result++)
                 {
                     if (currentMiningJobIndication != ClassMiningStats.CurrentJobIndication)
                         break;
 
-                    if (JobCompleted)
+                    foreach (var (firstNumber, secondNumber) in ClassMiningUtilities.SumOf(result))
+                    {
+                        if (currentMiningJobIndication != ClassMiningStats.CurrentJobIndication)
+                            break;
+
+                        if (firstNumber >= ClassMiningStats.CurrentMinRangeJob && firstNumber <= ClassMiningStats.CurrentMaxRangeJob &&
+                            secondNumber >= ClassMiningStats.CurrentMinRangeJob && secondNumber <= ClassMiningStats.CurrentMaxRangeJob)
+                            continue;
+
+                        await DoCalculationAsync(firstNumber, secondNumber, "+", "Addition", threadId - 1).ConfigureAwait(false);
+                    }
+                }
+
+                while (currentMiningJobIndication == ClassMiningStats.CurrentJobIndication)
+                    await Task.Delay(1000).ConfigureAwait(false);
+            }
+        }
+
+        private static async Task StartSubtractionJobAsync(int threadId)
+        {
+            while (ClassMiningNetwork.IsLogged && ThreadMiningRunning)
+            {
+                var (startRange, endRange) = ClassMiningUtilities.GetJob(ClassMiningStats.CurrentBlockDifficulty - 1, ClassMiningConfig.MiningConfigSubtractionJobThread, threadId - SubtractionJobIndexOffset - 1, 2);
+
+                var currentMiningJobIndication = ClassMiningStats.CurrentJobIndication;
+                ClassConsole.ConsoleWriteLine($"Thread: {threadId} | Job Type: Subtraction | Job Difficulty: {ClassMiningStats.CurrentMiningDifficulty} | Job Range: {startRange}-{endRange}", ClassConsoleEnumeration.IndexPoolConsoleBlueLog);
+
+                for (var result = startRange; result <= endRange; result++)
+                {
+                    if (currentMiningJobIndication != ClassMiningStats.CurrentJobIndication)
                         break;
 
                     foreach (var (firstNumber, secondNumber) in ClassMiningUtilities.SubtractOf(result))
@@ -382,78 +267,51 @@ namespace Xiropht_Miner
                         if (currentMiningJobIndication != ClassMiningStats.CurrentJobIndication)
                             break;
 
-                        if (JobCompleted)
-                            break;
-
                         if (firstNumber < ClassMiningStats.CurrentMinRangeJob || firstNumber > ClassMiningStats.CurrentMaxRangeJob)
                             continue;
 
                         if (secondNumber < ClassMiningStats.CurrentMinRangeJob || secondNumber > ClassMiningStats.CurrentMaxRangeJob)
                             continue;
 
-                        var calculation = $"{firstNumber} - {secondNumber}";
-
-                        var encryptedShare = MakeEncryptedShare(calculation, idThread - 1);
-
-                        if (encryptedShare == ClassAlgoErrorEnumeration.AlgoError)
-                            continue;
-
-                        var hashEncryptedShare = ClassUtility.GenerateSHA512(encryptedShare);
-
-                        if (!ClassMiningStats.CurrentJobIndication.Contains(hashEncryptedShare) && hashEncryptedShare != ClassMiningStats.CurrentBlockIndication)
-                            continue;
-
-                        if (SubmittedShares.ContainsKey(calculation))
-                            continue;
-
-                        if (!SubmittedShares.TryAdd(calculation, 1))
-                            continue;
-
-                        if (ClassMiningStats.CurrentJobIndication.Contains(hashEncryptedShare))
-                            ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Subtraction | Job found: {firstNumber} - {secondNumber} = {result}");
-
-                        if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
-                            ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Subtraction | Block found: {firstNumber} - {secondNumber} = {result}");
-
-                        var share = new JObject
-                        {
-                            { "type", ClassMiningRequest.TypeSubmit },
-                            { ClassMiningRequest.SubmitResult, result },
-                            { ClassMiningRequest.SubmitFirstNumber, firstNumber },
-                            { ClassMiningRequest.SubmitSecondNumber, secondNumber },
-                            { ClassMiningRequest.SubmitOperator, "-" },
-                            { ClassMiningRequest.SubmitShare, encryptedShare },
-                            { ClassMiningRequest.SubmitHash, hashEncryptedShare }
-                        };
-
-                        await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
-                        await Task.Delay(1000).ConfigureAwait(false);
+                        await DoCalculationAsync(firstNumber, secondNumber, "-", "Subtraction", threadId - 1).ConfigureAwait(false);
                     }
                 }
-
-                await Task.Run(async () =>
-                {
-                    while (currentMiningJobIndication == ClassMiningStats.CurrentJobIndication)
-                        await Task.Delay(1000).ConfigureAwait(false);
-                }).ConfigureAwait(false);
-            }
-        }
-
-        private static async Task StartThreadMiningMultiplicationJobAsync(int idThread)
-        {
-            while (ClassMiningNetwork.IsLogged && ThreadMiningRunning)
-            {
-                var (startRange, endRange) = ClassMiningUtilities.GetJob(ClassMiningStats.CurrentMiningDifficulty - 1, ClassMiningConfig.MiningConfigMultiplicationJobThread, idThread - ThreadMiningMultiplicationIndexOffset - 1);
-
-                var currentMiningJobIndication = ClassMiningStats.CurrentJobIndication;
-                ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Multiplication | Job Difficulty: {ClassMiningStats.CurrentMiningDifficulty} | Job Range: {startRange}-{endRange}", ClassConsoleEnumeration.IndexPoolConsoleBlueLog);
 
                 for (var result = startRange; result <= endRange; result++)
                 {
                     if (currentMiningJobIndication != ClassMiningStats.CurrentJobIndication)
                         break;
 
-                    if (JobCompleted)
+                    foreach (var (firstNumber, secondNumber) in ClassMiningUtilities.SubtractOf(result))
+                    {
+                        if (currentMiningJobIndication != ClassMiningStats.CurrentJobIndication)
+                            break;
+
+                        if (firstNumber >= ClassMiningStats.CurrentMinRangeJob && firstNumber <= ClassMiningStats.CurrentMaxRangeJob &&
+                            secondNumber >= ClassMiningStats.CurrentMinRangeJob && secondNumber <= ClassMiningStats.CurrentMaxRangeJob)
+                            continue;
+
+                        await DoCalculationAsync(firstNumber, secondNumber, "-", "Subtraction", threadId - 1).ConfigureAwait(false);
+                    }
+                }
+
+                while (currentMiningJobIndication == ClassMiningStats.CurrentJobIndication)
+                    await Task.Delay(1000).ConfigureAwait(false);
+            }
+        }
+
+        private static async Task StartMultiplicationJobAsync(int threadId)
+        {
+            while (ClassMiningNetwork.IsLogged && ThreadMiningRunning)
+            {
+                var (startRange, endRange) = ClassMiningUtilities.GetJob(ClassMiningStats.CurrentBlockDifficulty - 3, ClassMiningConfig.MiningConfigMultiplicationJobThread, threadId - MultiplicationJobIndexOffset - 1, 4);
+
+                var currentMiningJobIndication = ClassMiningStats.CurrentJobIndication;
+                ClassConsole.ConsoleWriteLine($"Thread: {threadId} | Job Type: Multiplication | Job Difficulty: {ClassMiningStats.CurrentMiningDifficulty} | Job Range: {startRange}-{endRange}", ClassConsoleEnumeration.IndexPoolConsoleBlueLog);
+
+                for (var result = startRange; result <= endRange; result++)
+                {
+                    if (currentMiningJobIndication != ClassMiningStats.CurrentJobIndication)
                         break;
 
                     if (ClassMiningUtilities.IsPrimeNumber(result))
@@ -464,78 +322,54 @@ namespace Xiropht_Miner
                         if (currentMiningJobIndication != ClassMiningStats.CurrentJobIndication)
                             break;
 
-                        if (JobCompleted)
-                            break;
-
                         if (firstNumber < ClassMiningStats.CurrentMinRangeJob || firstNumber > ClassMiningStats.CurrentMaxRangeJob)
                             continue;
 
                         if (secondNumber < ClassMiningStats.CurrentMinRangeJob || secondNumber > ClassMiningStats.CurrentMaxRangeJob)
                             continue;
 
-                        var calculation = $"{firstNumber} * {secondNumber}";
-
-                        var encryptedShare = MakeEncryptedShare(calculation, idThread - 1);
-
-                        if (encryptedShare == ClassAlgoErrorEnumeration.AlgoError)
-                            continue;
-
-                        var hashEncryptedShare = ClassUtility.GenerateSHA512(encryptedShare);
-
-                        if (!ClassMiningStats.CurrentJobIndication.Contains(hashEncryptedShare) && hashEncryptedShare != ClassMiningStats.CurrentBlockIndication)
-                            continue;
-
-                        if (SubmittedShares.ContainsKey(calculation))
-                            continue;
-
-                        if (!SubmittedShares.TryAdd(calculation, 1))
-                            continue;
-
-                        if (ClassMiningStats.CurrentJobIndication.Contains(hashEncryptedShare))
-                            ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Multiplication | Job found: {firstNumber} * {secondNumber} = {result}");
-
-                        if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
-                            ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Multiplication | Block found: {firstNumber} * {secondNumber} = {result}");
-
-                        var share = new JObject
-                        {
-                            { "type", ClassMiningRequest.TypeSubmit },
-                            { ClassMiningRequest.SubmitResult, result },
-                            { ClassMiningRequest.SubmitFirstNumber, firstNumber },
-                            { ClassMiningRequest.SubmitSecondNumber, secondNumber },
-                            { ClassMiningRequest.SubmitOperator, "*" },
-                            { ClassMiningRequest.SubmitShare, encryptedShare },
-                            { ClassMiningRequest.SubmitHash, hashEncryptedShare }
-                        };
-
-                        await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
-                        await Task.Delay(1000).ConfigureAwait(false);
+                        await DoCalculationAsync(firstNumber, secondNumber, "*", "Multiplication", threadId - 1).ConfigureAwait(false);
                     }
                 }
 
-                await Task.Run(async () =>
-                {
-                    while (currentMiningJobIndication == ClassMiningStats.CurrentJobIndication)
-                        await Task.Delay(1000).ConfigureAwait(false);
-                }).ConfigureAwait(false);
-            }
-        }
-
-        private static async Task StartThreadMiningDivisionJobAsync(int idThread)
-        {
-            while (ClassMiningNetwork.IsLogged && ThreadMiningRunning)
-            {
-                var (startRange, endRange) = ClassMiningUtilities.GetJob(ClassMiningStats.CurrentMiningDifficulty - 1, ClassMiningConfig.MiningConfigDivisionJobThread, idThread - ThreadMiningDivisionIndexOffset - 1);
-
-                var currentMiningJobIndication = ClassMiningStats.CurrentJobIndication;
-                ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Division | Job Difficulty: {ClassMiningStats.CurrentMiningDifficulty} | Job Range: {startRange}-{endRange}", ClassConsoleEnumeration.IndexPoolConsoleBlueLog);
-
-                for (var result = ClassMiningStats.CurrentMinRangeJob; result <= ClassMiningStats.CurrentMaxRangeJob; result++)
+                for (var result = startRange; result <= endRange; result++)
                 {
                     if (currentMiningJobIndication != ClassMiningStats.CurrentJobIndication)
                         break;
 
-                    if (JobCompleted)
+                    if (ClassMiningUtilities.IsPrimeNumber(result))
+                        continue;
+
+                    foreach (var (firstNumber, secondNumber) in ClassMiningUtilities.FactorOf(result))
+                    {
+                        if (currentMiningJobIndication != ClassMiningStats.CurrentJobIndication)
+                            break;
+
+                        if (firstNumber >= ClassMiningStats.CurrentMinRangeJob && firstNumber <= ClassMiningStats.CurrentMaxRangeJob &&
+                            secondNumber >= ClassMiningStats.CurrentMinRangeJob && secondNumber <= ClassMiningStats.CurrentMaxRangeJob)
+                            continue;
+
+                        await DoCalculationAsync(firstNumber, secondNumber, "*", "Multiplication", threadId - 1).ConfigureAwait(false);
+                    }
+                }
+
+                while (currentMiningJobIndication == ClassMiningStats.CurrentJobIndication)
+                    await Task.Delay(1000).ConfigureAwait(false);
+            }
+        }
+
+        private static async Task StartDivisionJobAsync(int threadId)
+        {
+            while (ClassMiningNetwork.IsLogged && ThreadMiningRunning)
+            {
+                var (startRange, endRange) = ClassMiningUtilities.GetJob(ClassMiningStats.CurrentBlockDifficulty - 1, ClassMiningConfig.MiningConfigDivisionJobThread, threadId - DivisionJobIndexOffset - 1, 2);
+
+                var currentMiningJobIndication = ClassMiningStats.CurrentJobIndication;
+                ClassConsole.ConsoleWriteLine($"Thread: {threadId} | Job Type: Division | Job Difficulty: {ClassMiningStats.CurrentMiningDifficulty} | Job Range: {startRange}-{endRange}", ClassConsoleEnumeration.IndexPoolConsoleBlueLog);
+
+                for (var result = ClassMiningStats.CurrentMinRangeJob; result <= ClassMiningStats.CurrentMaxRangeJob; result++)
+                {
+                    if (currentMiningJobIndication != ClassMiningStats.CurrentJobIndication)
                         break;
 
                     if (ClassMiningUtilities.IsPrimeNumber(result))
@@ -546,78 +380,54 @@ namespace Xiropht_Miner
                         if (currentMiningJobIndication != ClassMiningStats.CurrentJobIndication)
                             break;
 
-                        if (JobCompleted)
-                            break;
-
                         if (firstNumber < ClassMiningStats.CurrentMinRangeJob || firstNumber > ClassMiningStats.CurrentMaxRangeJob)
                             continue;
 
                         if (secondNumber < ClassMiningStats.CurrentMinRangeJob || secondNumber > ClassMiningStats.CurrentMaxRangeJob)
                             continue;
 
-                        var calculation = $"{firstNumber} / {secondNumber}";
-
-                        var encryptedShare = MakeEncryptedShare(calculation, idThread - 1);
-
-                        if (encryptedShare == ClassAlgoErrorEnumeration.AlgoError)
-                            continue;
-
-                        var hashEncryptedShare = ClassUtility.GenerateSHA512(encryptedShare);
-
-                        if (!ClassMiningStats.CurrentJobIndication.Contains(hashEncryptedShare) && hashEncryptedShare != ClassMiningStats.CurrentBlockIndication)
-                            continue;
-
-                        if (SubmittedShares.ContainsKey(calculation))
-                            continue;
-
-                        if (!SubmittedShares.TryAdd(calculation, 1))
-                            continue;
-
-                        if (ClassMiningStats.CurrentJobIndication.Contains(hashEncryptedShare))
-                            ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Division | Job found: {firstNumber} / {secondNumber} = {ClassMiningStats.CurrentMiningDifficulty}");
-
-                        if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
-                            ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Division | Block found: {firstNumber} / {secondNumber} = {ClassMiningStats.CurrentMiningDifficulty}");
-
-                        var share = new JObject
-                        {
-                            { "type", ClassMiningRequest.TypeSubmit },
-                            { ClassMiningRequest.SubmitResult, result },
-                            { ClassMiningRequest.SubmitFirstNumber, firstNumber },
-                            { ClassMiningRequest.SubmitSecondNumber, secondNumber },
-                            { ClassMiningRequest.SubmitOperator, "/" },
-                            { ClassMiningRequest.SubmitShare, encryptedShare },
-                            { ClassMiningRequest.SubmitHash, hashEncryptedShare }
-                        };
-
-                        await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
-                        await Task.Delay(1000).ConfigureAwait(false);
+                        await DoCalculationAsync(firstNumber, secondNumber, "/", "Division", threadId - 1).ConfigureAwait(false);
                     }
                 }
 
-                await Task.Run(async () =>
-                {
-                    while (currentMiningJobIndication == ClassMiningStats.CurrentJobIndication)
-                        await Task.Delay(1000).ConfigureAwait(false);
-                }).ConfigureAwait(false);
-            }
-        }
-
-        private static async Task StartThreadMiningModulusJobAsync(int idThread)
-        {
-            while (ClassMiningNetwork.IsLogged && ThreadMiningRunning)
-            {
-                var (startRange, endRange) = ClassMiningUtilities.GetJob(ClassMiningStats.CurrentMiningDifficulty - 1, ClassMiningConfig.MiningConfigModulusJobThread, idThread - ThreadMiningModulusIndexOffset - 1);
-
-                var currentMiningJobIndication = ClassMiningStats.CurrentJobIndication;
-                ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Modulus | Job Difficulty: {ClassMiningStats.CurrentMiningDifficulty} | Job Range: {startRange}-{endRange}", ClassConsoleEnumeration.IndexPoolConsoleBlueLog);
-
-                for (var firstNumber = startRange; firstNumber <= endRange; firstNumber++)
+                for (var result = ClassMiningStats.CurrentMinRangeJob; result <= ClassMiningStats.CurrentMaxRangeJob; result++)
                 {
                     if (currentMiningJobIndication != ClassMiningStats.CurrentJobIndication)
                         break;
 
-                    if (JobCompleted)
+                    if (ClassMiningUtilities.IsPrimeNumber(result))
+                        continue;
+
+                    foreach (var (firstNumber, secondNumber) in ClassMiningUtilities.DivisorOf(result))
+                    {
+                        if (currentMiningJobIndication != ClassMiningStats.CurrentJobIndication)
+                            break;
+
+                        if (firstNumber >= ClassMiningStats.CurrentMinRangeJob && firstNumber <= ClassMiningStats.CurrentMaxRangeJob &&
+                            secondNumber >= ClassMiningStats.CurrentMinRangeJob && secondNumber <= ClassMiningStats.CurrentMaxRangeJob)
+                            continue;
+
+                        await DoCalculationAsync(firstNumber, secondNumber, "/", "Division", threadId - 1).ConfigureAwait(false);
+                    }
+                }
+
+                while (currentMiningJobIndication == ClassMiningStats.CurrentJobIndication)
+                    await Task.Delay(1000).ConfigureAwait(false);
+            }
+        }
+
+        private static async Task StartModulusJobAsync(int threadId)
+        {
+            while (ClassMiningNetwork.IsLogged && ThreadMiningRunning)
+            {
+                var (startRange, endRange) = ClassMiningUtilities.GetJob(ClassMiningStats.CurrentBlockDifficulty - 1, ClassMiningConfig.MiningConfigModulusJobThread, threadId - ModulusJobIndexOffset - 1, 2);
+
+                var currentMiningJobIndication = ClassMiningStats.CurrentJobIndication;
+                ClassConsole.ConsoleWriteLine($"Thread: {threadId} | Job Type: Modulus | Job Difficulty: {ClassMiningStats.CurrentMiningDifficulty} | Job Range: {startRange}-{endRange}", ClassConsoleEnumeration.IndexPoolConsoleBlueLog);
+
+                for (var firstNumber = startRange; firstNumber <= endRange; firstNumber++)
+                {
+                    if (currentMiningJobIndication != ClassMiningStats.CurrentJobIndication)
                         break;
 
                     for (var secondNumber = firstNumber + 1; secondNumber <= ClassMiningStats.CurrentMaxRangeJob; secondNumber++)
@@ -625,79 +435,36 @@ namespace Xiropht_Miner
                         if (currentMiningJobIndication != ClassMiningStats.CurrentJobIndication)
                             break;
 
-                        if (JobCompleted)
-                            break;
-
-                        var calculation = $"{firstNumber} % {secondNumber}";
-
-                        var encryptedShare = MakeEncryptedShare(calculation, idThread - 1);
-
-                        if (encryptedShare == ClassAlgoErrorEnumeration.AlgoError)
-                            continue;
-
-                        var hashEncryptedShare = ClassUtility.GenerateSHA512(encryptedShare);
-
-                        if (!ClassMiningStats.CurrentJobIndication.Contains(hashEncryptedShare) && hashEncryptedShare != ClassMiningStats.CurrentBlockIndication)
-                            continue;
-
-                        if (SubmittedShares.ContainsKey(calculation))
-                            continue;
-
-                        if (!SubmittedShares.TryAdd(calculation, 1))
-                            continue;
-
-                        if (ClassMiningStats.CurrentJobIndication.Contains(hashEncryptedShare))
-                            ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Modulus | Job found: {firstNumber} % {secondNumber} = {firstNumber}");
-
-                        if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
-                            ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Modulus | Block found: {firstNumber} % {secondNumber} = {firstNumber}");
-
-                        var share = new JObject
-                        {
-                            { "type", ClassMiningRequest.TypeSubmit },
-                            { ClassMiningRequest.SubmitResult, firstNumber },
-                            { ClassMiningRequest.SubmitFirstNumber, firstNumber },
-                            { ClassMiningRequest.SubmitSecondNumber, secondNumber },
-                            { ClassMiningRequest.SubmitOperator, "%" },
-                            { ClassMiningRequest.SubmitShare, encryptedShare },
-                            { ClassMiningRequest.SubmitHash, hashEncryptedShare }
-                        };
-
-                        await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
-                        await Task.Delay(1000).ConfigureAwait(false);
+                        await DoCalculationAsync(firstNumber, secondNumber, "%", "Modulus", threadId - 1).ConfigureAwait(false);
                     }
                 }
 
-                await Task.Run(async () =>
-                {
-                    while (currentMiningJobIndication == ClassMiningStats.CurrentJobIndication)
-                        await Task.Delay(1000).ConfigureAwait(false);
-                }).ConfigureAwait(false);
+                while (currentMiningJobIndication == ClassMiningStats.CurrentJobIndication)
+                    await Task.Delay(1000).ConfigureAwait(false);
             }
         }
 
-        /// <summary>
-        /// Start thread mining.
-        /// </summary>
-        private static async Task StartThreadMiningAsync(int idThread)
+        private static async Task StartRandomJobAsync(int threadId)
         {
-            var minRange = Math.Round(ClassMiningStats.CurrentMaxRangeJob / ClassMiningConfig.MiningConfigThread * (idThread - 1), 0);
+            var minRange = Math.Round(ClassMiningStats.CurrentMaxRangeJob / ClassMiningConfig.MiningConfigThread * (threadId - 1), 0);
+
             if (minRange <= 1)
                 minRange = 2;
-            var maxRange = Math.Round(ClassMiningStats.CurrentMaxRangeJob / ClassMiningConfig.MiningConfigThread * idThread, 0);
-            ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Any | Job Difficulty: {ClassMiningStats.CurrentMiningDifficulty} | Job Range: {minRange}-{maxRange}", ClassConsoleEnumeration.IndexPoolConsoleBlueLog);
+
+            var maxRange = Math.Round(ClassMiningStats.CurrentMaxRangeJob / ClassMiningConfig.MiningConfigThread * threadId, 0);
+            ClassConsole.ConsoleWriteLine($"Thread: {threadId} | Job Type: Random | Job Difficulty: {ClassMiningStats.CurrentMiningDifficulty} | Job Range: {minRange}-{maxRange}", ClassConsoleEnumeration.IndexPoolConsoleBlueLog);
             var currentMiningJobIndication = ClassMiningStats.CurrentJobIndication;
 
             while (ClassMiningNetwork.IsLogged && ThreadMiningRunning)
             {
                 if (currentMiningJobIndication != ClassMiningStats.CurrentJobIndication)
                 {
-                    minRange = Math.Round(ClassMiningStats.CurrentMaxRangeJob / ClassMiningConfig.MiningConfigThread * (idThread - 1), 0);
+                    minRange = Math.Round(ClassMiningStats.CurrentMaxRangeJob / ClassMiningConfig.MiningConfigThread * (threadId - 1), 0);
                     if (minRange <= 1)
                         minRange = 2;
-                    maxRange = Math.Round(ClassMiningStats.CurrentMaxRangeJob / ClassMiningConfig.MiningConfigThread * idThread, 0);
+                    maxRange = Math.Round(ClassMiningStats.CurrentMaxRangeJob / ClassMiningConfig.MiningConfigThread * threadId, 0);
                     currentMiningJobIndication = ClassMiningStats.CurrentJobIndication;
-                    ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Any | Job Difficulty: {ClassMiningStats.CurrentMiningDifficulty} | Job Range: {minRange}-{maxRange}", ClassConsoleEnumeration.IndexPoolConsoleBlueLog);
+                    ClassConsole.ConsoleWriteLine($"Thread: {threadId} | Job Type: Random | Job Difficulty: {ClassMiningStats.CurrentMiningDifficulty} | Job Range: {minRange}-{maxRange}", ClassConsoleEnumeration.IndexPoolConsoleBlueLog);
                 }
 
                 var firstNumber = ClassUtility.GenerateNumberMathCalculation(minRange, maxRange);
@@ -712,7 +479,7 @@ namespace Xiropht_Miner
                     {
                         if (calculationResult - Math.Round(calculationResult, 0) == 0) // Check if the result contain decimal places, if yes ignore it. 
                         {
-                            var encryptedShare = MakeEncryptedShare(calculation, idThread - 1);
+                            var encryptedShare = MakeEncryptedShare(calculation, threadId - 1);
 
                             if (encryptedShare != ClassAlgoErrorEnumeration.AlgoError)
                             {
@@ -728,10 +495,10 @@ namespace Xiropht_Miner
                                         continue;
 
                                     if (ClassMiningStats.CurrentJobIndication.Contains(hashEncryptedShare))
-                                        ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Any | Job found: {firstNumber} {ClassUtility.RandomOperatorCalculation[i]} {secondNumber} = {calculationResult}");
+                                        ClassConsole.ConsoleWriteLine($"Thread: {threadId} | Job Type: Random | Job found: {firstNumber} {ClassUtility.RandomOperatorCalculation[i]} {secondNumber} = {calculationResult}");
 
                                     if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
-                                        ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Any | Block found: {firstNumber} {ClassUtility.RandomOperatorCalculation[i]} {secondNumber} = {calculationResult}");
+                                        ClassConsole.ConsoleWriteLine($"Thread: {threadId} | Job Type: Random | Block found: {firstNumber} {ClassUtility.RandomOperatorCalculation[i]} {secondNumber} = {calculationResult}");
 
                                     var share = new JObject
                                     {
@@ -745,7 +512,6 @@ namespace Xiropht_Miner
                                     };
 
                                     await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
-                                    await Task.Delay(1000).ConfigureAwait(false);
                                 }
                             }
                         }
@@ -758,7 +524,7 @@ namespace Xiropht_Miner
                             {
                                 if (calculationResult >= ClassMiningStats.CurrentMinRangeJob && calculationResult <= ClassMiningStats.CurrentBlockDifficulty)
                                 {
-                                    var encryptedShare = MakeEncryptedShare(calculation, idThread - 1);
+                                    var encryptedShare = MakeEncryptedShare(calculation, threadId - 1);
 
                                     if (encryptedShare != ClassAlgoErrorEnumeration.AlgoError)
                                     {
@@ -774,10 +540,10 @@ namespace Xiropht_Miner
                                                 continue;
 
                                             if (ClassMiningStats.CurrentJobIndication.Contains(hashEncryptedShare))
-                                                ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Any | Job found: {secondNumber} {ClassUtility.RandomOperatorCalculation[i]} {firstNumber} = {calculationResult}");
+                                                ClassConsole.ConsoleWriteLine($"Thread: {threadId} | Job Type: Random | Job found: {secondNumber} {ClassUtility.RandomOperatorCalculation[i]} {firstNumber} = {calculationResult}");
 
                                             if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
-                                                ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Any | Block found: {secondNumber} {ClassUtility.RandomOperatorCalculation[i]} {firstNumber} = {calculationResult}");
+                                                ClassConsole.ConsoleWriteLine($"Thread: {threadId} | Job Type: Random | Block found: {secondNumber} {ClassUtility.RandomOperatorCalculation[i]} {firstNumber} = {calculationResult}");
 
                                             var share = new JObject
                                             {
@@ -791,7 +557,6 @@ namespace Xiropht_Miner
                                             };
 
                                             await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
-                                            await Task.Delay(1000).ConfigureAwait(false);
                                         }
                                     }
                                 }
@@ -807,7 +572,7 @@ namespace Xiropht_Miner
                         {
                             if (calculationResult >= ClassMiningStats.CurrentMinRangeJob && calculationResult <= ClassMiningStats.CurrentBlockDifficulty)
                             {
-                                var encryptedShare = MakeEncryptedShare(calculation, idThread - 1);
+                                var encryptedShare = MakeEncryptedShare(calculation, threadId - 1);
 
                                 if (encryptedShare != ClassAlgoErrorEnumeration.AlgoError)
                                 {
@@ -823,10 +588,10 @@ namespace Xiropht_Miner
                                             continue;
 
                                         if (ClassMiningStats.CurrentJobIndication.Contains(hashEncryptedShare))
-                                            ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Any | Job found: {secondNumber} {ClassUtility.RandomOperatorCalculation[i]} {firstNumber} = {calculationResult}");
+                                            ClassConsole.ConsoleWriteLine($"Thread: {threadId} | Job Type: Random | Job found: {secondNumber} {ClassUtility.RandomOperatorCalculation[i]} {firstNumber} = {calculationResult}");
 
                                         if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
-                                            ClassConsole.ConsoleWriteLine($"Thread: {idThread} | Job Type: Any | Block found: {secondNumber} {ClassUtility.RandomOperatorCalculation[i]} {firstNumber} = {calculationResult}");
+                                            ClassConsole.ConsoleWriteLine($"Thread: {threadId} | Job Type: Random | Block found: {secondNumber} {ClassUtility.RandomOperatorCalculation[i]} {firstNumber} = {calculationResult}");
 
                                         var share = new JObject
                                         {
@@ -840,27 +605,12 @@ namespace Xiropht_Miner
                                         };
 
                                         await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
-                                        await Task.Delay(1000).ConfigureAwait(false);
                                     }
                                 }
                             }
                         }
                     }
-
-                    if (JobCompleted)
-                        break;
                 }
-
-                if (!JobCompleted)
-                    continue;
-                
-                var indication = currentMiningJobIndication;
-
-                await Task.Run(async () =>
-                {
-                    while (indication == ClassMiningStats.CurrentJobIndication)
-                        await Task.Delay(1000).ConfigureAwait(false);
-                }).ConfigureAwait(false);
             }
 
             ThreadMiningRunning = false;
@@ -869,8 +619,6 @@ namespace Xiropht_Miner
         /// <summary>
         /// Encrypt math calculation with the current mining method
         /// </summary>
-        /// <param name="calculation"></param>
-        /// <returns></returns>
         private static string MakeEncryptedShare(string calculation, int idThread)
         {
             try
@@ -901,6 +649,60 @@ namespace Xiropht_Miner
             {
                 return ClassAlgoErrorEnumeration.AlgoError;
             }
+        }
+
+        private static async Task DoCalculationAsync(decimal firstNumber, decimal secondNumber, string operatorSymbol, string jobType, int threadIndex)
+        {
+            if (firstNumber < 2 || firstNumber > ClassMiningStats.CurrentBlockDifficulty)
+                return;
+
+            if (secondNumber < 2 || secondNumber > ClassMiningStats.CurrentBlockDifficulty)
+                return;
+
+            var calculation = $"{firstNumber} {operatorSymbol} {secondNumber}";
+
+            if (SubmittedShares.ContainsKey(calculation))
+                return;
+
+            var result = ClassUtility.ComputeCalculation(firstNumber.ToString("F0"), operatorSymbol, secondNumber.ToString("F0"));
+
+            if (result - Math.Round(result, 0) != 0)
+                return;
+
+            if (result < 2 || result > ClassMiningStats.CurrentBlockDifficulty)
+                return;
+
+            var encryptedShare = MakeEncryptedShare(calculation, threadIndex);
+
+            if (encryptedShare == ClassAlgoErrorEnumeration.AlgoError)
+                return;
+
+            var hashEncryptedShare = ClassUtility.GenerateSHA512(encryptedShare);
+
+            if (!ClassMiningStats.CurrentJobIndication.Contains(hashEncryptedShare) && hashEncryptedShare != ClassMiningStats.CurrentBlockIndication)
+                return;
+
+            if (!SubmittedShares.TryAdd(calculation, 1))
+                return;
+
+            if (ClassMiningStats.CurrentJobIndication.Contains(hashEncryptedShare))
+                ClassConsole.ConsoleWriteLine($"Thread: {threadIndex + 1} | Job Type: {jobType} | Job found: {firstNumber} {operatorSymbol} {secondNumber} = {result}");
+
+            if (hashEncryptedShare == ClassMiningStats.CurrentBlockIndication)
+                ClassConsole.ConsoleWriteLine($"Thread: {threadIndex + 1} | Job Type: {jobType} | Block found: {firstNumber} {operatorSymbol} {secondNumber} = {result}");
+
+            var share = new JObject
+            {
+                { "type", ClassMiningRequest.TypeSubmit },
+                { ClassMiningRequest.SubmitResult, result },
+                { ClassMiningRequest.SubmitFirstNumber, firstNumber },
+                { ClassMiningRequest.SubmitSecondNumber, secondNumber },
+                { ClassMiningRequest.SubmitOperator, operatorSymbol },
+                { ClassMiningRequest.SubmitShare, encryptedShare },
+                { ClassMiningRequest.SubmitHash, hashEncryptedShare }
+            };
+
+            await ClassMiningNetwork.SendPacketToPoolAsync(share.ToString(Formatting.None)).ConfigureAwait(false);
         }
     }
 }

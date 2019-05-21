@@ -313,7 +313,7 @@ namespace Xiropht_Miner
 
                         ClassMining.SubmittedShares.Clear();
 
-                        ClassMining.ProceedMining();
+                        ClassMining.StartMining();
 
                         ClassConsole.ConsoleWriteLine("New Mining Job: " + ClassMiningStats.CurrentJobIndication + " | Job Difficulty: " + ClassMiningStats.CurrentMiningDifficulty + " | Block ID: " + ClassMiningStats.CurrentBlockId + " | Block Difficulty: " + ClassMiningStats.CurrentBlockDifficulty + " | Block Hash Indication: " + ClassMiningStats.CurrentBlockIndication, ClassConsoleEnumeration.IndexPoolConsoleMagentaLog);
                         ClassConsole.ConsoleWriteLine("Total Share(s) to Found: " + totalShareToFound, ClassConsoleEnumeration.IndexPoolConsoleMagentaLog);

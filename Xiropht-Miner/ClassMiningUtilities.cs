@@ -50,10 +50,10 @@ namespace Xiropht_Miner
             return true;
         }
 
-        public static (decimal start, decimal end) GetJob(decimal totalPossibilities, int totalThread, int currentThreadIndex)
+        public static (decimal start, decimal end) GetJob(decimal totalPossibilities, int totalThread, int currentThreadIndex, int offset)
         {
-            var startRange = DivideEvenly(totalPossibilities, totalThread).Take(currentThreadIndex + 1).Sum() - DivideEvenly(totalPossibilities, totalThread).ElementAt(currentThreadIndex) + ClassMiningStats.CurrentMinRangeJob;
-            var endRange = DivideEvenly(totalPossibilities, totalThread).Take(currentThreadIndex + 1).Sum() + ClassMiningStats.CurrentMinRangeJob - 1;
+            var startRange = DivideEvenly(totalPossibilities, totalThread).Take(currentThreadIndex + 1).Sum() - DivideEvenly(totalPossibilities, totalThread).ElementAt(currentThreadIndex) + offset;
+            var endRange = DivideEvenly(totalPossibilities, totalThread).Take(currentThreadIndex + 1).Sum() + offset - 1;
 
             return (startRange, endRange);
         }

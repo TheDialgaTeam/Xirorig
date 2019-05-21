@@ -86,19 +86,13 @@ namespace Xiropht_Miner
                 case ClassCommandLine.CommandLineHelp:
                     ShowCommandLineHelp();
                     break;
+
                 case ClassCommandLine.CommandLineJob:
                     ClassConsole.ConsoleWriteLine("Current Mining Difficulty: " + ClassMiningStats.CurrentMiningDifficulty + " | Current Mining Job: " + ClassMiningStats.CurrentJobIndication + " | Block ID: " + ClassMiningStats.CurrentBlockId + " | Block Difficulty: " + ClassMiningStats.CurrentBlockDifficulty, ClassConsoleEnumeration.IndexPoolConsoleMagentaLog);
                     break;
 
                 case ClassCommandLine.CommandLineStats:
-                    try
-                    {
-                        ClassConsole.ConsoleWriteLine("Estimated Hashrate: " + ClassMining.TotalHashrate + " H/s | Good Share: " + ClassMiningStats.TotalGoodShare + " Invalid Share: " + ClassMiningStats.TotalInvalidShare, ClassConsoleEnumeration.IndexPoolConsoleMagentaLog);
-                    }
-                    catch
-                    {
-                    }
-
+                    ClassConsole.ConsoleWriteLine("Estimated Hashrate: " + ClassMining.TotalHashrate + " H/s | Good Share: " + ClassMiningStats.TotalGoodShare + " Invalid Share: " + ClassMiningStats.TotalInvalidShare, ClassConsoleEnumeration.IndexPoolConsoleMagentaLog);
                     break;
             }
         }
