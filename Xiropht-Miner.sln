@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xiropht-Miner", "Xiropht-Mi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xiropht-Connector-All", "Xiropht-Connector-All\Xiropht-Connector-All\Xiropht-Connector-All.csproj", "{A0684C2D-252E-4E1B-8AA1-3371669809E0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xiropht-Miner-Net-Core", "Xiropht-Miner-Net-Core\Xiropht-Miner-Net-Core.csproj", "{BD96FCD4-4636-45B7-BFE6-E43CFC014A8D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{A0684C2D-252E-4E1B-8AA1-3371669809E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A0684C2D-252E-4E1B-8AA1-3371669809E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A0684C2D-252E-4E1B-8AA1-3371669809E0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BD96FCD4-4636-45B7-BFE6-E43CFC014A8D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BD96FCD4-4636-45B7-BFE6-E43CFC014A8D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BD96FCD4-4636-45B7-BFE6-E43CFC014A8D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BD96FCD4-4636-45B7-BFE6-E43CFC014A8D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
